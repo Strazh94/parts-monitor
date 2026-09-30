@@ -1,4 +1,4 @@
-﻿"""Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р°: РїРѕРєР°Р·Р°С‚РµР»Рё РґРЅСЏ, РўРћРџ-20 (РўР— Рї.19)."""
+﻿"""Dashboard: daily metrics, TOP-20 (spec §19)."""
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Request
@@ -33,7 +33,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 
     products_total = db.scalar(select(func.count()).select_from(Product)) or 0
 
-    # РўРѕРІР°СЂС‹ РІ РЅР°Р»РёС‡РёРё: РµСЃС‚СЊ Р°РєС‚РёРІРЅРѕРµ РїСЂРµРґР»РѕР¶РµРЅРёРµ СЃРѕ СЃС‚Р°С‚СѓСЃРѕРј "РІ РЅР°Р»РёС‡РёРё"
+    # Products in stock: there is an active offer with status "in stock"
     in_stock = db.scalar(
         select(func.count(func.distinct(Offer.product_id)))
         .select_from(Offer)
@@ -43,7 +43,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         )
     ) or 0
 
-    # РР·РјРµРЅРµРЅРёСЏ Р·Р° СЃРµРіРѕРґРЅСЏ
+    # Changes today
     changes_today = db.execute(
         select(ChangeEvent.change_type, func.count())
         .where(ChangeEvent.day == today)
@@ -66,7 +66,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     )
     processed_today = last_run.products_found if last_run else 0
 
-    # РўРћРџ-20 РїРѕ РґРёРЅР°РјРёРєРµ СЃРїСЂРѕСЃР° (СЃСЂРµРґРЅРµРґРЅРµРІРЅРѕР№ СЃРїСЂРѕСЃ)
+    # TOP-20 by demand dynamics (average daily demand)
     top_demand = db.execute(
         select(Product, ProductMetrics)
         .join(ProductMetrics)
@@ -74,7 +74,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         .limit(20)
     ).all()
 
-    # РўРћРџ-20 РґР»СЏ Р·Р°РєСѓРїРєРё (РёРЅРґРµРєСЃ СЃРїСЂРѕСЃР°)
+    # TOP-20 for purchasing (demand index)
     top_purchase = db.execute(
         select(Product, ProductMetrics)
         .join(ProductMetrics)

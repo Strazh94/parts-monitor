@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ product.name }} — история{% endblock %}
+{% block title %}{{ product.name }} — history{% endblock %}
 {% block content %}
 <div class="flex items-start justify-between mb-4">
     <div>
         <h1 class="text-2xl font-bold">{{ product.name }}</h1>
         <p class="text-gray-500 text-sm mt-1">
-            Артикул: <span class="font-mono">{{ product.article or '—' }}</span>
+            SKU: <span class="font-mono">{{ product.article or '—' }}</span>
             {% if product.oem %} · OEM: <span class="font-mono">{{ product.oem }}</span>{% endif %}
             {% if product.brand %} · {{ product.brand }}{% endif %}
-            {% if product.applicability %} · Применяемость: {{ product.applicability }}{% endif %}
+            {% if product.applicability %} · Application: {{ product.applicability }}{% endif %}
         </p>
     </div>
     {% if metrics %}
@@ -26,49 +26,49 @@
 <div class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
     <div class="bg-white rounded-lg shadow p-3">
         <div class="text-xl font-bold">{{ metrics.sales_7d }}</div>
-        <div class="text-xs text-gray-500">Продажи 7 дней</div>
+        <div class="text-xs text-gray-500">Sales 7 days</div>
     </div>
     <div class="bg-white rounded-lg shadow p-3">
         <div class="text-xl font-bold">{{ metrics.sales_30d }}</div>
-        <div class="text-xs text-gray-500">Продажи 30 дней</div>
+        <div class="text-xs text-gray-500">Sales 30 days</div>
     </div>
     <div class="bg-white rounded-lg shadow p-3">
         <div class="text-xl font-bold">{{ metrics.avg_daily_demand }}</div>
-        <div class="text-xs text-gray-500">Среднедневной спрос</div>
+        <div class="text-xs text-gray-500">Average daily demand</div>
     </div>
     <div class="bg-white rounded-lg shadow p-3">
         <div class="text-xl font-bold">{{ metrics.sales_frequency_pct }}%</div>
-        <div class="text-xs text-gray-500">Частота продаж</div>
+        <div class="text-xs text-gray-500">Sales frequency</div>
     </div>
     <div class="bg-white rounded-lg shadow p-3">
         <div class="text-xl font-bold">{{ metrics.competitors_count }}</div>
-        <div class="text-xs text-gray-500">Конкурентов</div>
+        <div class="text-xs text-gray-500">Competitors</div>
     </div>
     <div class="bg-white rounded-lg shadow p-3">
         <div class="text-xl font-bold">
             {% if metrics.price_min %}{{ '%.0f'|format(metrics.price_min) }}–{{ '%.0f'|format(metrics.price_max) }} ₽{% else %}—{% endif %}
         </div>
-        <div class="text-xs text-gray-500">Диапазон цен</div>
+        <div class="text-xs text-gray-500">Price range</div>
     </div>
 </div>
 {% endif %}
 
 <div class="grid md:grid-cols-2 gap-6 mb-6">
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold mb-2">Дата → остаток</h2>
+        <h2 class="font-semibold mb-2">Date → stock</h2>
         <canvas id="stockChart" height="180"></canvas>
     </section>
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold mb-2">Дата → цена</h2>
+        <h2 class="font-semibold mb-2">Date → price</h2>
         <canvas id="priceChart" height="180"></canvas>
     </section>
 </div>
 
 <section class="bg-white rounded-lg shadow p-4 mb-6">
-    <h2 class="font-semibold mb-3">Предложения конкурентов</h2>
+    <h2 class="font-semibold mb-3">Competitor offers</h2>
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-            <th class="py-2">Конкурент</th><th>Цена</th><th>Старая</th><th>Остаток</th><th>Наличие</th><th>Ссылка</th>
+            <th class="py-2">Competitor</th><th>Price</th><th>Old</th><th>Stock</th><th>Availability</th><th>Link</th>
         </tr></thead>
         <tbody>
         {% for o in offers %}
@@ -78,27 +78,27 @@
             <td>{% if o.old_price %}<s class="text-gray-400">{{ '%.0f'|format(o.old_price) }} ₽</s>{% else %}—{% endif %}</td>
             <td>{{ o.stock_qty if o.stock_qty is not none else '—' }}</td>
             <td>
-                {% if o.disappeared %}<span class="text-red-600">Товар исчез из каталога</span>
-                {% elif o.stock_status.value == 'in_stock' %}<span class="text-emerald-600">В наличии</span>
-                {% elif o.stock_status.value == 'out_of_stock' %}<span class="text-red-500">Нет в наличии</span>
-                {% elif o.stock_status.value == 'on_order' %}<span class="text-amber-600">Под заказ</span>
-                {% elif o.stock_status.value == 'many' %}<span class="text-blue-600">Много</span>
+                {% if o.disappeared %}<span class="text-red-600">Product disappeared from the catalog</span>
+                {% elif o.stock_status.value == 'in_stock' %}<span class="text-emerald-600">In stock</span>
+                {% elif o.stock_status.value == 'out_of_stock' %}<span class="text-red-500">Out of stock</span>
+                {% elif o.stock_status.value == 'on_order' %}<span class="text-amber-600">On order</span>
+                {% elif o.stock_status.value == 'many' %}<span class="text-blue-600">Many</span>
                 {% else %}—{% endif %}
             </td>
-            <td><a href="{{ o.url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">открыть</a></td>
+            <td><a href="{{ o.url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">open</a></td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="py-3 text-gray-400">Нет предложений</td></tr>
+        <tr><td colspan="6" class="py-3 text-gray-400">No offers</td></tr>
         {% endfor %}
         </tbody>
     </table>
 </section>
 
 <section class="bg-white rounded-lg shadow p-4">
-    <h2 class="font-semibold mb-3">История</h2>
+    <h2 class="font-semibold mb-3">History</h2>
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-            <th class="py-2">Дата</th><th>Цена от</th><th>Цена до</th><th>Остаток (сумма)</th><th>Изменение</th>
+            <th class="py-2">Date</th><th>Price from</th><th>Price to</th><th>Stock (total)</th><th>Change</th>
         </tr></thead>
         <tbody>
         {% for row in history|reverse %}
@@ -109,14 +109,14 @@
             <td>{{ row.total if row.total is not none else '—' }}</td>
             <td>
                 {% if row.delta is not none %}
-                    {% if row.delta < 0 %}<span class="text-emerald-600 font-semibold">{{ row.delta }} (продажи {{ -row.delta }})</span>
-                    {% elif row.delta > 0 %}<span class="text-blue-600 font-semibold">+{{ row.delta }} (поступление)</span>
+                    {% if row.delta < 0 %}<span class="text-emerald-600 font-semibold">{{ row.delta }} (sold {{ -row.delta }})</span>
+                    {% elif row.delta > 0 %}<span class="text-blue-600 font-semibold">+{{ row.delta }} (restock)</span>
                     {% else %}0{% endif %}
                 {% else %}—{% endif %}
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="py-3 text-gray-400">История появится после нескольких запусков</td></tr>
+        <tr><td colspan="5" class="py-3 text-gray-400">History will appear after several runs</td></tr>
         {% endfor %}
         </tbody>
     </table>

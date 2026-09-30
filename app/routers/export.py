@@ -1,4 +1,4 @@
-"""Выгрузка в Excel: 4 листа (ТЗ п.21)."""
+"""Excel export: 4 sheets (spec §21)."""
 from io import BytesIO
 
 from fastapi import APIRouter, Depends
@@ -13,11 +13,11 @@ from app.models import Offer, Product, ProductMetrics, Snapshot, StockStatus
 router = APIRouter()
 
 STOCK_STATUS_LABELS = {
-    "in_stock": "В наличии",
-    "out_of_stock": "Нет в наличии",
-    "on_order": "Под заказ",
-    "many": "Много",
-    "unknown": "Неизвестно",
+    "in_stock": "In stock",
+    "out_of_stock": "Out of stock",
+    "on_order": "On order",
+    "many": "Many",
+    "unknown": "Unknown",
 }
 
 
@@ -32,18 +32,18 @@ def _header(ws, columns: list[str]) -> None:
 
 @router.get("/excel")
 def export_excel(db: Session = Depends(get_db)):
-    """Выгрузка: Лист 1 «Текущие данные», 2 «История», 3 «Рекомендации», 4 «Цены конкурентов»."""
+    """Export: Sheet 1 "Current data", 2 "History", 3 "Recommendations", 4 "Competitor prices"."""
     wb = Workbook()
 
-    # --- Лист 1: Текущие данные ---
+    # --- Sheet 1: Current data ---
     ws = wb.active
-    ws.title = "Текущие данные"
+    ws.title = "Current data"
     _header(
         ws,
         [
-            "Артикул", "OEM", "Бренд", "Наименование", "Применяемость",
-            "Категория", "Конкурент", "Цена", "Старая цена", "Скидка %",
-            "Остаток", "Наличие", "URL", "Дата первого обнаружения",
+            "SKU", "OEM", "Brand", "Name", "Application",
+            "Category", "Competitor", "Price", "Old price", "Discount %",
+            "Stock", "Availability", "URL", "First seen date",
         ],
     )
     offers = db.scalars(
@@ -70,9 +70,9 @@ def export_excel(db: Session = Depends(get_db)):
         width = max(len(str(c.value or "")) for c in col)
         ws.column_dimensions[col[0].column_letter].width = min(max(width + 2, 10), 50)
 
-    # --- Лист 2: История (все ежедневные снимки) ---
-    ws2 = wb.create_sheet("История")
-    _header(ws2, ["Дата", "Артикул", "Наименование", "Конкурент", "Цена", "Остаток", "Статус"])
+    # --- Sheet 2: History (all daily snapshots) ---
+    ws2 = wb.create_sheet("History")
+    _header(ws2, ["Date", "SKU", "Name", "Competitor", "Price", "Stock", "Status"])
     snapshots = db.scalars(
         select(Snapshot)
         .join(Product)
@@ -102,15 +102,15 @@ def export_excel(db: Session = Depends(get_db)):
             ]
         )
 
-    # --- Лист 3: Рекомендации к закупке ---
-    ws3 = wb.create_sheet("Рекомендации к закупке")
+    # --- Sheet 3: Purchase recommendations ---
+    ws3 = wb.create_sheet("Purchase recommendations")
     _header(
         ws3,
         [
-            "Рейтинг", "Индекс спроса", "Артикул", "Наименование", "Применяемость",
-            "Конкурентов", "Мин. цена", "Макс. цена", "Средняя цена",
-            "Продажи 7 дней", "Продажи 30 дней", "Среднедневной спрос",
-            "Частота продаж %",
+            "Rating", "Demand index", "SKU", "Name", "Application",
+            "Competitors", "Min price", "Max price", "Average price",
+            "Sales 7 days", "Sales 30 days", "Average daily demand",
+            "Sales frequency %",
         ],
     )
     recs = db.execute(
@@ -133,9 +133,9 @@ def export_excel(db: Session = Depends(get_db)):
             ]
         )
 
-    # --- Лист 4: Цены конкурентов ---
-    ws4 = wb.create_sheet("Цены конкурентов")
-    _header(ws4, ["Артикул", "Наименование", "Конкурент", "Цена", "Наличие", "URL"])
+    # --- Sheet 4: Competitor prices ---
+    ws4 = wb.create_sheet("Competitor prices")
+    _header(ws4, ["SKU", "Name", "Competitor", "Price", "Availability", "URL"])
     for o in offers:
         if o.price is None:
             continue

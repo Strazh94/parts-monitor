@@ -1,6 +1,6 @@
-"""Планировщик: ежедневный парсинг в 20:00–23:00 МСК (ТЗ п.3).
+"""Scheduler: daily parsing at 20:00–23:00 MSK (spec §3).
 
-Запускается отдельным процессом: python -m worker.scheduler
+Runs as a separate process: python -m worker.scheduler
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ MSK = timezone(timedelta(hours=3))
 
 
 def _schedule_hour() -> tuple[int, int]:
-    """Время запуска из настроек (по умолчанию 21:00 МСК = в окне 20:00–23:00)."""
+    """Run time from settings (default 21:00 MSK = within the 20:00–23:00 window)."""
     with SessionLocal() as db:
         row = db.get(AppSetting, "parse_schedule")
         if row and isinstance(row.value, dict):
@@ -38,8 +38,8 @@ def _schedule_hour() -> tuple[int, int]:
 
 
 async def daily_parse_job() -> None:
-    """Полный ежедневный цикл: все конкуренты -> метрики -> отчёт."""
-    logger.info("Ежедневный запуск сбора данных начат")
+    """Full daily cycle: all competitors -> metrics -> report."""
+    logger.info("Daily data collection started")
     with SessionLocal() as db:
         competitors = db.scalars(
             select(Competitor).where(Competitor.enabled.is_(True))
@@ -49,15 +49,15 @@ async def daily_parse_job() -> None:
             try:
                 await run_competitor(db, competitor, trigger=RunTrigger.AUTO.value)
             except Exception:  # noqa: BLE001
-                logger.exception("Ошибка парсинга %s", competitor.name)
+                logger.exception("Parsing error for %s", competitor.name)
 
-        # Пересчёт метрик и отчёт после всех сайтов
+        # Recalculate metrics and the report after all sites
         count = recalculate_all(db)
-        logger.info("Метрики пересчитаны для %d товаров", count)
+        logger.info("Metrics recalculated for %d products", count)
 
         report = build_daily_report(db)
     logger.info(
-        "Отчёт за %s: сайтов=%d, товаров=%d, новых=%d, изменений цен=%d, снижений остатка=%d",
+        "Report for %s: sites=%d, products=%d, new=%d, price changes=%d, stock decreases=%d",
         report["day"],
         report["sites_checked"],
         report["products_checked"],
@@ -66,12 +66,12 @@ async def daily_parse_job() -> None:
         report["stock_decreased"],
     )
     if report["errors"]:
-        logger.warning("Завершились с ошибкой: %d запусков", len(report["errors"]))
-    logger.info("Ежедневный сбор данных завершён")
+        logger.warning("Finished with errors: %d runs", len(report["errors"]))
+    logger.info("Daily data collection finished")
 
 
 async def amain() -> None:
-    """Запуск планировщика внутри event loop (AsyncIOScheduler требует running loop)."""
+    """Start the scheduler inside an event loop (AsyncIOScheduler requires a running loop)."""
     hour, minute = _schedule_hour()
     scheduler = AsyncIOScheduler(timezone=MSK)
     scheduler.add_job(
@@ -81,9 +81,9 @@ async def amain() -> None:
         misfire_grace_time=3600,
     )
     scheduler.start()
-    logger.info("Планировщик запущен: ежедневный сбор в %02d:%02d МСК", hour, minute)
+    logger.info("Scheduler started: daily collection at %02d:%02d MSK", hour, minute)
     try:
-        # Держим процесс живым до Ctrl+C / остановки контейнера
+        # Keep the process alive until Ctrl+C / container stop
         await asyncio.Event().wait()
     finally:
         scheduler.shutdown(wait=False)

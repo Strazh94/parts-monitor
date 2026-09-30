@@ -1,8 +1,8 @@
-"""Сопоставление товаров разных конкурентов (ТЗ п.17).
+"""Matching products across competitors (spec §17).
 
-Критически важная функция: один и тот же товар у разных конкурентов
-объединяется по OEM / артикулу / кросс-номеру.
-Название — только дополнительный фактор (для создания новых позиций).
+Critical function: the same product from different competitors
+is merged by OEM / SKU / cross-number.
+The name is only an additional factor (used when creating new positions).
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from app.services.parser.normalize import normalize_key, split_cross_numbers
 
 @dataclass
 class ParsedItem:
-    """Элемент, распарсенный со страницы конкурента (до сопоставления)."""
+    """An item parsed from a competitor's page (before matching)."""
 
     url: str
     name: str | None = None
@@ -37,15 +37,15 @@ class ParsedItem:
 
 
 class ProductMatcher:
-    """Индекс нормализованных ключей -> продукт.
+    """Index of normalized keys -> product.
 
-    Строится один раз на запуск парсинга: загружает все ключи из БД
-    и в памяти отвечает на вопрос «есть ли такой товар?».
+    Built once per parse run: loads all keys from the DB
+    and answers "does this product exist?" in memory.
     """
 
     def __init__(self, db: Session):
         self.db = db
-        # нормализованный ключ -> product_id
+        # normalized key -> product_id
         self.key_index: dict[str, int] = {}
         self._load()
 
@@ -55,7 +55,7 @@ class ProductMatcher:
         ).all()
         for pid, oem, article, crosses in products:
             for key in self._keys(oem, article, crosses):
-                # Первый найденный побеждает при коллизии
+                # The first match wins on collision
                 self.key_index.setdefault(key, pid)
 
     @staticmethod
@@ -68,7 +68,7 @@ class ProductMatcher:
         return keys
 
     def match(self, item: ParsedItem) -> Product:
-        """Возвращает существующий товар или создаёт новый."""
+        """Returns an existing product or creates a new one."""
         crosses = split_cross_numbers(item.cross_numbers_raw)
         for key in self._keys(item.oem, item.article, crosses):
             pid = self.key_index.get(key)
@@ -78,9 +78,9 @@ class ProductMatcher:
                     self._merge_info(product, item, crosses)
                     return product
 
-        # Не найден — создаём новую каноническую позицию
+        # Not found — create a new canonical product
         product = Product(
-            name=(item.name or "Без названия").strip()[:500],
+            name=(item.name or "Untitled").strip()[:500],
             brand=_strip(item.brand),
             article=_strip(item.article),
             oem=_strip(item.oem),
@@ -92,13 +92,13 @@ class ProductMatcher:
         self.db.add(product)
         self.db.flush()
 
-        # Регистрируем все ключи нового товара
+        # Register all keys of the new product
         for key in self._keys(product.oem, product.article, crosses):
             self.key_index.setdefault(key, product.id)
         return product
 
     def _merge_info(self, product: Product, item: ParsedItem, crosses: list[str]) -> None:
-        """Дозаполняет пустые поля позиции данными из нового конкурента."""
+        """Fills in empty product fields with data from the new competitor."""
         changed = False
         if not product.brand and item.brand:
             product.brand = _strip(item.brand)

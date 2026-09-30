@@ -1,4 +1,4 @@
-"""Веб-интерфейс системы (ТЗ п.22)."""
+"""Web interface of the system (spec §22)."""
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -14,7 +14,7 @@ from app.routers import (
 )
 from app.templating import BASE_DIR
 
-app = FastAPI(title="Мониторинг запчастей конкурентов")
+app = FastAPI(title="Competitor Parts Monitoring")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 app.include_router(dashboard.router)

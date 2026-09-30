@@ -1,4 +1,4 @@
-﻿"""РљРѕРЅС‚СЂРѕР»СЊ СЂР°Р±РѕС‚С‹ РїР°СЂСЃРµСЂР°: СЃС‚Р°С‚СѓСЃС‹ Р·Р°РїСѓСЃРєРѕРІ (РўР— Рї.24)."""
+﻿"""Parser monitoring: run statuses (spec §24)."""
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.get("", response_class=HTMLResponse)
 def runs_list(request: Request, db: Session = Depends(get_db)):
-    """Р’СЃРµ Р·Р°РїСѓСЃРєРё: РІСЂРµРјСЏ, СЃС‚Р°С‚СѓСЃ, СЃС‚СЂР°РЅРёС†С‹, С‚РѕРІР°СЂС‹, РѕС€РёР±РєРё."""
+    """All runs: time, status, pages, products, errors."""
     runs = db.scalars(
         select(ParseRun)
         .options(joinedload(ParseRun.competitor))

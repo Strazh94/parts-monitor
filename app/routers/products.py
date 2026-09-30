@@ -1,4 +1,4 @@
-﻿"""РўРѕРІР°СЂС‹: РїРѕРёСЃРє, С„РёР»СЊС‚СЂС‹ (РўР— Рї.18), РєР°СЂС‚РѕС‡РєР° СЃ РёСЃС‚РѕСЂРёРµР№ (РўР— Рї.14)."""
+﻿"""Products: search, filters (spec §18), card with history (spec §14)."""
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import func, or_, select
@@ -16,7 +16,7 @@ from app.models import (
 
 router = APIRouter()
 
-# Р”РѕСЃС‚СѓРїРЅС‹Рµ С„РёР»СЊС‚СЂС‹: РєР»СЋС‡ -> РєРѕР»РѕРЅРєР° РјРµС‚СЂРёРє (РўР— Рї.18)
+# Available filters: key -> metrics column (spec §18)
 RATING_FILTERS = ("A", "B", "C", "D", "NEW")
 
 
@@ -31,7 +31,7 @@ def product_list(
     sort: str = "index",
     db: Session = Depends(get_db),
 ):
-    """РЎРїРёСЃРѕРє С‚РѕРІР°СЂРѕРІ СЃ РїРѕРёСЃРєРѕРј РїРѕ Р°СЂС‚РёРєСѓР»Сѓ/OEM/РЅР°Р·РІР°РЅРёСЋ/Р±СЂРµРЅРґСѓ Рё С„РёР»СЊС‚СЂР°РјРё."""
+    """Product list with search by SKU/OEM/name/brand and filters."""
     query = (
         select(Product, ProductMetrics)
         .join(ProductMetrics, isouter=True)
@@ -89,38 +89,38 @@ def product_list(
 
 @router.get("/{product_id}", response_class=HTMLResponse)
 def product_card(request: Request, product_id: int, db: Session = Depends(get_db)):
-    """РљР°СЂС‚РѕС‡РєР° С‚РѕРІР°СЂР°: РіСЂР°С„РёРєРё РёСЃС‚РѕСЂРёРё + С‚Р°Р±Р»РёС†Р° (РўР— Рї.14)."""
+    """Product card: history charts + table (spec §14)."""
     product = db.get(Product, product_id)
     if product is None:
-        return HTMLResponse("РўРѕРІР°СЂ РЅРµ РЅР°Р№РґРµРЅ", status_code=404)
+        return HTMLResponse("Product not found", status_code=404)
 
     metrics = db.get(ProductMetrics, product_id)
 
-    # Р’СЃСЏ РёСЃС‚РѕСЂРёСЏ РїРѕ РІСЃРµРј РєРѕРЅРєСѓСЂРµРЅС‚Р°Рј, РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅР°СЏ РїРѕ РґР°С‚Рµ
+    # Full history across all competitors, sorted by date
     snapshots = db.scalars(
         select(Snapshot)
         .where(Snapshot.product_id == product_id)
         .order_by(Snapshot.day.asc())
     ).all()
 
-    # РџСЂРµРґР»РѕР¶РµРЅРёСЏ РєРѕРЅРєСѓСЂРµРЅС‚РѕРІ
+    # Competitor offers
     offers = db.scalars(
         select(Offer)
         .where(Offer.product_id == product_id)
         .options(joinedload(Offer.competitor))
     ).unique().all()
 
-    # РЎРµСЂРёР°Р»РёР·Р°С†РёСЏ РґР»СЏ РіСЂР°С„РёРєРѕРІ: РїРѕ РєР°Р¶РґРѕРјСѓ РєРѕРЅРєСѓСЂРµРЅС‚Сѓ С‚РѕС‡РєРё (РґР°С‚Р°, С†РµРЅР°, РѕСЃС‚Р°С‚РѕРє)
+    # Serialization for charts: per competitor, points (date, price, stock)
     series: dict[str, dict] = {}
     for s in snapshots:
         name = next(
-            (o.competitor.name for o in offers if o.id == s.offer_id), "вЂ”"
+            (o.competitor.name for o in offers if o.id == s.offer_id), "—"
         )
         entry = series.setdefault(name, {"stock": [], "price": []})
         entry["stock"].append({"x": s.day.isoformat(), "y": s.stock_qty})
         entry["price"].append({"x": s.day.isoformat(), "y": float(s.price) if s.price else None})
 
-    # РЎРІРѕРґРЅР°СЏ С‚Р°Р±Р»РёС†Р° РёСЃС‚РѕСЂРёРё (РґР°С‚Р°, С†РµРЅР° min, РѕСЃС‚Р°С‚РѕРє sum, РёР·РјРµРЅРµРЅРёРµ)
+    # Summary history table (date, min price, total stock, change)
     by_day: dict = {}
     for s in snapshots:
         d = by_day.setdefault(s.day, {"prices": [], "stocks": []})

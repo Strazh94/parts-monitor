@@ -1,4 +1,4 @@
-﻿"""РђРЅР°Р»РёС‚РёРєР°: СЂРµР№С‚РёРЅРіРё, С†РµРЅС‹, СЂРµРєРѕРјРµРЅРґР°С†РёРё Рє Р·Р°РєСѓРїРєРµ (РўР— Рї.9-13, 10)."""
+﻿"""Analytics: ratings, prices, purchase recommendations (spec §9-13, 10)."""
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("", response_class=HTMLResponse)
 def analytics_home(request: Request, db: Session = Depends(get_db)):
-    """РЎРІРѕРґРЅР°СЏ Р°РЅР°Р»РёС‚РёРєР°: СЂР°СЃРїСЂРµРґРµР»РµРЅРёРµ СЂРµР№С‚РёРЅРіРѕРІ, РёРЅРґРµРєСЃ СЃРїСЂРѕСЃР°."""
+    """Overview analytics: rating distribution, demand index."""
     from sqlalchemy import func
 
     rating_dist = dict(
@@ -24,7 +24,7 @@ def analytics_home(request: Request, db: Session = Depends(get_db)):
         ).all()
     )
 
-    # РўРѕРІР°СЂС‹ СЃ СЂРѕСЃС‚РѕРј С†РµРЅ / РїР°РґРµРЅРёРµРј С†РµРЅ Р·Р° 30 РґРЅРµР№ вЂ” С‡РµСЂРµР· РјРµС‚СЂРёРєРё С†РµРЅ
+    # Products with rising / falling prices over 30 days — via price metrics
     top_index = db.execute(
         select(Product, ProductMetrics)
         .join(ProductMetrics)
@@ -41,7 +41,7 @@ def analytics_home(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/top", response_class=HTMLResponse)
 def top_sales(request: Request, db: Session = Depends(get_db)):
-    """ТОП продаж: ранжирование по предполагаемым продажам (ТЗ п.8, 20)."""
+    """Top sales: ranking by estimated sales (spec §8, 20)."""
     rows = db.execute(
         select(Product, ProductMetrics)
         .join(ProductMetrics)
@@ -57,7 +57,7 @@ def top_sales(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/prices", response_class=HTMLResponse)
 def price_analysis(request: Request, q: str = "", db: Session = Depends(get_db)):
-    """РђРЅР°Р»РёР· С†РµРЅ РїРѕ Р°СЂС‚РёРєСѓР»Р°Рј: РјРёРЅ/РјР°РєСЃ/СЃСЂРµРґ/РјРµРґРёР°РЅР°, С†РµРЅС‹ РєРѕРЅРєСѓСЂРµРЅС‚РѕРІ (РўР— Рї.13)."""
+    """Price analysis by SKU: min/max/average/median, competitor prices (spec §13)."""
     query = (
         select(Product, ProductMetrics)
         .join(ProductMetrics)
@@ -74,7 +74,7 @@ def price_analysis(request: Request, q: str = "", db: Session = Depends(get_db))
         query.order_by(ProductMetrics.demand_index.desc()).limit(100)
     ).all()
 
-    # Р”Р»СЏ С‚РѕРїРѕРІС‹С… С‚РѕРІР°СЂРѕРІ РїРѕРґС‚СЏРіРёРІР°РµРј С†РµРЅС‹ РєР°Р¶РґРѕРіРѕ РєРѕРЅРєСѓСЂРµРЅС‚Р°
+    # For the top products, pull the prices of every competitor
     product_ids = [p.id for p, _ in rows]
     offers_by_product: dict[int, list] = {}
     if product_ids:
@@ -99,7 +99,7 @@ def price_analysis(request: Request, q: str = "", db: Session = Depends(get_db))
 
 @router.get("/purchase", response_class=HTMLResponse)
 def purchase_recommendations(request: Request, db: Session = Depends(get_db)):
-    """Р Р°Р·РґРµР» В«Р РµРєРѕРјРµРЅРґСѓРµРјС‹Рµ РїРѕР·РёС†РёРё РґР»СЏ Р·Р°РєСѓРїРєРёВ» (РўР— Рї.10)."""
+    """Section "Recommended items for purchase" (spec §10)."""
     rows = db.execute(
         select(Product, ProductMetrics)
         .join(ProductMetrics)

@@ -1,4 +1,4 @@
-"""Ежедневный отчёт (ТЗ п.20)."""
+"""Daily report (spec §20)."""
 from datetime import date
 
 from fastapi import APIRouter, Depends, Request

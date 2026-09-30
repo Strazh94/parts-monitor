@@ -1,4 +1,4 @@
-"""Скрипт миграций Alembic."""
+"""Alembic migration script."""
 from logging.config import fileConfig
 
 from alembic import context
@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import settings
 from app.database import Base
-from app import models  # noqa: F401 — регистрация всех моделей
+from app import models  # noqa: F401 — register all models
 
 config = context.config
 
@@ -19,7 +19,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """Запуск SQL без подключения к БД."""
+    """Run SQL without connecting to the database."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -32,7 +32,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Запуск миграций через подключение к БД."""
+    """Run migrations through a database connection."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

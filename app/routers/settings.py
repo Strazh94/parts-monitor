@@ -1,4 +1,4 @@
-﻿"""РќР°СЃС‚СЂРѕР№РєРё: СЂР°СЃРїРёСЃР°РЅРёРµ, РІРµСЃР° РёРЅРґРµРєСЃР° СЃРїСЂРѕСЃР° (РўР— Рї.3, 12)."""
+﻿"""Settings: schedule, demand index weights (spec §3, 12)."""
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
@@ -10,14 +10,14 @@ from app.models import AppSetting
 
 router = APIRouter()
 
-# Р—РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ РЅР°СЃС‚СЂР°РёРІР°РµРјРѕРіРѕ РёРЅРґРµРєСЃР° (РўР— Рї.12)
+# Default values for the configurable index (spec §12)
 DEFAULT_WEIGHTS = {
-    "w_sales_volume": 30,     # РѕР±СЉРµРј РїСЂРµРґРїРѕР»Р°РіР°РµРјС‹С… РїСЂРѕРґР°Р¶
-    "w_frequency": 20,        # С‡Р°СЃС‚РѕС‚Р° РїСЂРѕРґР°Р¶
-    "w_competitors": 20,      # РєРѕР»РёС‡РµСЃС‚РІРѕ РєРѕРЅРєСѓСЂРµРЅС‚РѕРІ
-    "w_stock_dynamics": 15,   # РґРёРЅР°РјРёРєР° РѕСЃС‚Р°С‚РєРѕРІ
-    "w_price_change": 10,     # РёР·РјРµРЅРµРЅРёРµ С†РµРЅС‹
-    "w_days_observed": 5,     # РєРѕР»РёС‡РµСЃС‚РІРѕ РґРЅРµР№ РЅР°Р±Р»СЋРґРµРЅРёСЏ
+    "w_sales_volume": 30,     # estimated sales volume
+    "w_frequency": 20,        # sales frequency
+    "w_competitors": 20,      # number of competitors
+    "w_stock_dynamics": 15,   # stock dynamics
+    "w_price_change": 10,     # price change
+    "w_days_observed": 5,     # number of days observed
 }
 
 
@@ -50,7 +50,7 @@ def save_weights(
     w_days_observed: int = Form(...),
     db: Session = Depends(get_db),
 ):
-    """РЎРѕС…СЂР°РЅРµРЅРёРµ РІРµСЃРѕРІ РёРЅРґРµРєСЃР°: В«Р¤РѕСЂРјСѓР»Р° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ РЅР°СЃС‚СЂР°РёРІР°РµРјРѕР№В» (РўР— Рї.12)."""
+    """Save index weights: "The formula must be configurable" (spec §12)."""
     weights = {
         "w_sales_volume": w_sales_volume,
         "w_frequency": w_frequency,

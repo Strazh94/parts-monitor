@@ -1,6 +1,6 @@
-"""HTTP-адаптер: конфигурируемый парсинг по CSS-селекторам.
+"""HTTP adapter: configurable parsing by CSS selectors.
 
-Конфиг хранится в Competitor.parser_config:
+Config is stored in Competitor.parser_config:
 {
   "start_urls": ["https://site/catalog/page-{page}"],
   "max_pages": 50,
@@ -37,11 +37,11 @@ DEFAULT_UA = (
 
 
 class ParseError(Exception):
-    """Ошибка парсинга конкретного сайта."""
+    """Parsing error for a specific site."""
 
 
 class HttpAdapter:
-    """Скачивает страницы через httpx и извлекает товары по селекторам."""
+    """Downloads pages via httpx and extracts products by selectors."""
 
     def __init__(self, base_url: str, config: dict, timeout: float = 30.0):
         self.base_url = base_url
@@ -50,16 +50,16 @@ class HttpAdapter:
         self.pages_processed = 0
 
     async def fetch_items(self, on_progress=None) -> list[ParsedItem]:
-        """Обходит страницы каталога и собирает товары."""
+        """Walks the catalog pages and collects products."""
         fields = self.config.get("fields") or {}
         if not fields.get("name") and not fields.get("url"):
             raise ParseError(
-                "Не настроены селекторы парсинга (fields) для этого сайта"
+                "Parsing selectors (fields) are not configured for this site"
             )
 
         item_selector = self.config.get("item_selector")
         if not item_selector:
-            raise ParseError("Не задан item_selector — селектор карточки товара")
+            raise ParseError("item_selector is not set — the product card selector")
 
         start_urls = self.config.get("start_urls") or [self.base_url]
         max_pages = int(self.config.get("max_pages", 20))
@@ -86,7 +86,7 @@ class HttpAdapter:
                 try:
                     html = await self._fetch(client, page_url)
                 except Exception as exc:  # noqa: BLE001
-                    logger.warning("Ошибка загрузки %s: %s", page_url, exc)
+                    logger.warning("Failed to load %s: %s", page_url, exc)
                     self._stat("errors", 1)
                     continue
 
@@ -98,7 +98,7 @@ class HttpAdapter:
                 page_items = self._extract(soup, page_url, fields, item_selector)
                 items.extend(page_items)
 
-                # Пагинация: кнопка "следующая" или шаблон URL
+                # Pagination: "next" button or URL template
                 if self.config.get("pagination") == "next_button":
                     next_sel = self.config.get("next_selector", "a.next")
                     link = soup.select_one(next_sel)
@@ -107,7 +107,7 @@ class HttpAdapter:
                         if nxt not in visited:
                             urls_to_visit.append(nxt)
                 else:
-                    # Шаблон {page} в start_urls
+                    # {page} template in start_urls
                     for tpl in start_urls:
                         if "{page}" in tpl:
                             current = self._page_number(tpl, page_url)
@@ -116,13 +116,13 @@ class HttpAdapter:
                                 if nxt not in visited:
                                     urls_to_visit.append(nxt)
 
-                # Вежливая задержка между запросами
+                # Polite delay between requests
                 if urls_to_visit and delay > 0:
                     await asyncio.sleep(delay)
 
         if not items:
             raise ParseError(
-                "Найдено 0 товаров — вероятно, структура сайта изменилась"
+                "Found 0 products — the site structure has probably changed"
             )
         return items
 
@@ -136,7 +136,7 @@ class HttpAdapter:
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
                 await asyncio.sleep(2.0 * (attempt + 1))
-        raise ParseError(f"Не удалось загрузить {url}: {last_exc}")
+        raise ParseError(f"Failed to load {url}: {last_exc}")
 
     def _extract(
         self,
@@ -216,5 +216,5 @@ class HttpAdapter:
 
     @staticmethod
     def _stat(key: str, value: int) -> None:
-        """Заглушка для счётчиков; используется ParseRun."""
+        """Stub for counters; ParseRun is used instead."""
         return None

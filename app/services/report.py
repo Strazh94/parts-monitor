@@ -1,4 +1,4 @@
-"""Ежедневный отчёт после завершения парсинга (ТЗ п.20)."""
+"""Daily report built after parsing finishes (spec §20)."""
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -16,7 +16,7 @@ from app.models import (
 
 
 def build_daily_report(db: Session, day: date | None = None) -> dict:
-    """Собирает отчёт за день: итоги, ТОП-50 продаж, рост спроса, новые позиции."""
+    """Builds the daily report: totals, TOP-50 sales, demand growth, new items."""
     day = day or date.today()
 
     runs = db.scalars(
@@ -24,7 +24,7 @@ def build_daily_report(db: Session, day: date | None = None) -> dict:
     ).all()
     sites_checked = len({r.competitor_id for r in runs})
 
-    # Товары проверено — суммарно по успешным запускам
+    # Products checked — total across successful runs
     products_checked = sum(r.products_found for r in runs if r.status.value == "ok")
 
     changes = db.execute(
@@ -52,7 +52,7 @@ def build_daily_report(db: Session, day: date | None = None) -> dict:
         (db.get(Product, pid), sold) for pid, sold in sales_events
     ]
 
-    # ТОП с ростом спроса — по индексу и среднедневному спросу
+    # TOP with growing demand — by index and average daily demand
     top_growing = db.execute(
         select(Product, ProductMetrics)
         .join(ProductMetrics)
@@ -60,7 +60,7 @@ def build_daily_report(db: Session, day: date | None = None) -> dict:
         .limit(20)
     ).all()
 
-    # Новые позиции за день
+    # New items for the day
     new_pids = db.scalars(
         select(ChangeEvent.product_id)
         .where(ChangeEvent.day == day, ChangeEvent.change_type == ChangeType.APPEARED)
@@ -68,8 +68,8 @@ def build_daily_report(db: Session, day: date | None = None) -> dict:
     ).all()
     new_products = [db.get(Product, pid) for pid in new_pids][:50]
 
-    # Наиболее значительные изменения цен
-    price_changes = db.execute(
+    # Most significant price changes
+    price_changes = db.scalars(
         select(ChangeEvent)
         .where(
             ChangeEvent.day == day,
@@ -78,7 +78,7 @@ def build_daily_report(db: Session, day: date | None = None) -> dict:
         .limit(50)
     ).all()
 
-    # Появившиеся сразу у нескольких конкурентов
+    # Appeared at several competitors at once
     multi = db.execute(
         select(
             ChangeEvent.product_id,

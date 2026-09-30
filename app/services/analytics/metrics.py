@@ -1,7 +1,7 @@
-"""Расчёт метрик спроса (ТЗ п.8, 9, 11, 12, 13).
+"""Demand metrics calculation (spec §8, 9, 11, 12, 13).
 
-Запускается после каждого парсинга: пересчитывает ProductMetrics
-для всех товаров по накопленной истории снапшотов.
+Runs after each parse: recalculates ProductMetrics
+for all products from the accumulated snapshot history.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from app.models import (
 
 PERIODS = (1, 7, 14, 30, 60, 90)
 
-# Пороговые значения рейтинга (ТЗ п.9) — настраиваемые
+# Rating thresholds (spec §9) — configurable
 RATING_RULES = {
     "A": {"min_frequency_pct": 40, "min_sales_30d": 5},
     "B": {"min_frequency_pct": 15, "min_sales_30d": 2},
@@ -41,12 +41,12 @@ DEFAULT_WEIGHTS = {
 
 
 def recalculate_all(db: Session) -> int:
-    """Пересчёт метрик для всех товаров. Возвращает число обработанных."""
+    """Recalculate metrics for all products. Returns the number processed."""
     products = db.scalars(select(Product)).all()
     weights = _get_weights(db)
     today = date.today()
 
-    # Один запрос на все данные за 90 дней — а не N запросов на товар
+    # One query for all data over 90 days — instead of N queries per product
     since = today - timedelta(days=max(PERIODS))
     events = _load_events(db, since, today)
     offers_by_product = _load_offers(db)
@@ -92,7 +92,7 @@ def _load_offers(db: Session) -> dict[int, list[Offer]]:
 
 
 def _load_snapshot_days(db: Session, since: date, today: date) -> dict[int, list[date]]:
-    """Дни, в которые был хоть один снапшот товара (для частоты продаж)."""
+    """Days on which the product had at least one snapshot (for sales frequency)."""
     rows = db.execute(
         select(Snapshot.product_id, Snapshot.day)
         .where(Snapshot.day >= since, Snapshot.day <= today)
@@ -110,7 +110,7 @@ def _fill_sales(
     observed_days: list[date],
     today: date,
 ) -> None:
-    """Продажи по периодам = сумма отрицательных дельт остатка (ТЗ п.8)."""
+    """Sales per period = sum of negative stock deltas (spec §8)."""
     sales_by_period = {p: 0 for p in PERIODS}
     replenish_7d = 0
     days_with_decrease: set[date] = set()
@@ -123,7 +123,7 @@ def _fill_sales(
                 if days_ago < period:
                     sales_by_period[period] += sold
             if days_ago < 7:
-                replenish_7d += 0  # счётчик поступлений ниже
+                replenish_7d += 0  # restock counter is below
             days_with_decrease.add(ev.day)
         elif ev.change_type == ChangeType.REPLENISHMENT and ev.delta_qty:
             if (today - ev.day).days < 7:
@@ -137,10 +137,10 @@ def _fill_sales(
     metrics.sales_90d = sales_by_period[90]
     metrics.replenishments_7d = replenish_7d
 
-    # Дней наблюдения — сколько дней есть в истории (не больше 30 для частоты)
+    # Days observed — how many days exist in the history (at most 30 for frequency)
     metrics.days_observed = len(observed_days)
 
-    # Частота продаж: % дней со снижением остатка (ТЗ п.8)
+    # Sales frequency: % of days with a stock decrease (spec §8)
     if observed_days:
         window = [d for d in observed_days if (today - d).days <= 30]
         observed_30d = max(len(window), 1)
@@ -151,18 +151,18 @@ def _fill_sales(
     else:
         metrics.sales_frequency_pct = 0
 
-    # Среднедневной спрос = продажи за 30 дней / дни наблюдения (ТЗ п.8)
+    # Average daily demand = sales over 30 days / days observed (spec §8)
     denom = min(metrics.days_observed, 30) or 1
     metrics.avg_daily_demand = round(metrics.sales_30d / denom, 3)
 
 
 def _fill_competitors(metrics: ProductMetrics, offers: list[Offer]) -> None:
-    """Сколько конкурентов одновременно продают артикул (ТЗ п.11)."""
+    """How many competitors sell the same SKU at once (spec §11)."""
     metrics.competitors_count = len({o.competitor_id for o in offers})
 
 
 def _fill_prices(metrics: ProductMetrics, offers: list[Offer]) -> None:
-    """Мин/макс/сред/медиана по активным предложениям (ТЗ п.13)."""
+    """Min/max/average/median across active offers (spec §13)."""
     prices = sorted(
         float(o.price) for o in offers if o.price is not None
     )
@@ -183,8 +183,8 @@ def _fill_prices(metrics: ProductMetrics, offers: list[Offer]) -> None:
 
 
 def _fill_rating(metrics: ProductMetrics, product: Product) -> None:
-    """A/B/C/D/NEW (ТЗ п.9)."""
-    # NEW: мало истории — товар появился недавно
+    """A/B/C/D/NEW (spec §9)."""
+    # NEW: little history — the product appeared recently
     if metrics.days_observed < 3:
         metrics.rating = "NEW"
         return
@@ -205,24 +205,24 @@ def _fill_rating(metrics: ProductMetrics, product: Product) -> None:
 
 
 def _fill_index(metrics: ProductMetrics, weights: dict) -> None:
-    """Сводный индекс спроса 0..100 с настраиваемыми весами (ТЗ п.12).
+    """Overall demand index 0..100 with configurable weights (spec §12).
 
-    Каждый фактор нормируется в 0..1, затем взвешенная сумма * 100.
+    Each factor is normalized to 0..1, then the weighted sum * 100.
     """
     factors = {
-        # Объем продаж за 30 дней: 10 шт. и более = максимум
+        # Sales volume over 30 days: 10 pcs or more = maximum
         "w_sales_volume": min(metrics.sales_30d / 10.0, 1.0),
-        # Частота продаж в %
+        # Sales frequency in %
         "w_frequency": min(metrics.sales_frequency_pct / 100.0, 1.0),
-        # Конкурентов: 5 и больше = максимум
+        # Competitors: 5 or more = maximum
         "w_competitors": min(metrics.competitors_count / 5.0, 1.0),
-        # Динамика остатков: поступления за 7 дней как сигнал активности
+        # Stock dynamics: restocks over 7 days as an activity signal
         "w_stock_dynamics": min(
             (metrics.sales_7d + metrics.replenishments_7d) / 10.0, 1.0
         ),
-        # Изменение цены за период: считаем по наличию цены вообще
+        # Price change over the period: counted by whether a price exists at all
         "w_price_change": 1.0 if metrics.price_min is not None else 0.0,
-        # Дни наблюдения: 30+ дней = максимум доверия
+        # Days observed: 30+ days = maximum confidence
         "w_days_observed": min(metrics.days_observed / 30.0, 1.0),
     }
 

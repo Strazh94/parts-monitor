@@ -1,26 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Рекомендации к закупке{% endblock %}
+{% block title %}Purchase recommendations{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-1">Рекомендуемые позиции для закупки</h1>
-<p class="text-sm text-gray-500 mb-4">Товары с наиболее высокой предполагаемой оборачиваемостью (ТЗ п.10)</p>
+<h1 class="text-2xl font-bold mb-1">Recommended items for purchase</h1>
+<p class="text-sm text-gray-500 mb-4">Products with the highest estimated turnover (spec §10)</p>
 
 <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
             <th class="p-3">#</th>
-            <th class="p-3">Артикул</th>
-            <th class="p-3">Название</th>
-            <th class="p-3">Применяемость</th>
-            <th class="p-3">Конкурентов</th>
-            <th class="p-3">Мин. цена</th>
-            <th class="p-3">Макс. цена</th>
-            <th class="p-3">Сред. цена</th>
-            <th class="p-3">Продажи 7д</th>
-            <th class="p-3">Продажи 30д</th>
-            <th class="p-3">Частота</th>
-            <th class="p-3">Наличие</th>
-            <th class="p-3">Рейтинг</th>
-            <th class="p-3">Индекс</th>
+            <th class="p-3">SKU</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Application</th>
+            <th class="p-3">Competitors</th>
+            <th class="p-3">Min. price</th>
+            <th class="p-3">Max. price</th>
+            <th class="p-3">Avg. price</th>
+            <th class="p-3">Sales 7d</th>
+            <th class="p-3">Sales 30d</th>
+            <th class="p-3">Frequency</th>
+            <th class="p-3">Availability</th>
+            <th class="p-3">Rating</th>
+            <th class="p-3">Index</th>
         </tr></thead>
         <tbody>
         {% for product, m in rows %}
@@ -36,7 +36,7 @@
             <td class="p-3">{{ m.sales_7d }}</td>
             <td class="p-3">{{ m.sales_30d }}</td>
             <td class="p-3">{{ m.sales_frequency_pct }}%</td>
-            <td class="p-3">{{ m.competitors_count }} из {{ m.competitors_count }}</td>
+            <td class="p-3">{{ m.competitors_count }} of {{ m.competitors_count }}</td>
             <td class="p-3">
                 <span class="px-2 py-0.5 rounded text-white text-xs
                     {% if m.rating == 'A' %}bg-emerald-600{% elif m.rating == 'B' %}bg-blue-500
@@ -46,7 +46,7 @@
             <td class="p-3 font-bold">{{ m.demand_index }}/100</td>
         </tr>
         {% else %}
-        <tr><td colspan="14" class="p-6 text-center text-gray-400">Нет данных — запустите сбор</td></tr>
+        <tr><td colspan="14" class="p-6 text-center text-gray-400">No data — run a collection</td></tr>
         {% endfor %}
         </tbody>
     </table>

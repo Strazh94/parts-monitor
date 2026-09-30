@@ -1,4 +1,4 @@
-"""Playwright-адаптер для сайтов на JavaScript (ТЗ п.26)."""
+"""Playwright adapter for JavaScript sites (spec §26)."""
 from __future__ import annotations
 
 import asyncio
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class PlaywrightAdapter:
-    """Рендерит страницы в headless-браузере и извлекает товары."""
+    """Renders pages in a headless browser and extracts products."""
 
     def __init__(self, base_url: str, config: dict, timeout_ms: int = 30000):
         self.base_url = base_url
@@ -26,13 +26,13 @@ class PlaywrightAdapter:
             from playwright.async_api import async_playwright
         except ImportError as exc:
             raise ParseError(
-                "Playwright не установлен: pip install playwright && playwright install chromium"
+                "Playwright is not installed: pip install playwright && playwright install chromium"
             ) from exc
 
         fields = self.config.get("fields") or {}
         item_selector = self.config.get("item_selector")
         if not item_selector:
-            raise ParseError("Не задан item_selector для Playwright-парсинга")
+            raise ParseError("item_selector is not set for Playwright parsing")
 
         start_urls = self.config.get("start_urls") or [self.base_url]
         max_pages = int(self.config.get("max_pages", 20))
@@ -59,14 +59,14 @@ class PlaywrightAdapter:
                 try:
                     await page.goto(page_url, timeout=self.timeout_ms, wait_until="networkidle")
                 except Exception as exc:  # noqa: BLE001
-                    logger.warning("Playwright: ошибка загрузки %s: %s", page_url, exc)
+                    logger.warning("Playwright: failed to load %s: %s", page_url, exc)
                     continue
 
                 self.pages_processed += 1
                 if on_progress:
                     await on_progress(self.pages_processed, len(items))
 
-                # Прокрутка — чтобы подгрузились ленивые товары
+                # Scroll so that lazy-loaded products appear
                 await self._scroll(page)
 
                 items.extend(
@@ -94,7 +94,7 @@ class PlaywrightAdapter:
 
         if not items:
             raise ParseError(
-                "Найдено 0 товаров — вероятно, структура сайта изменилась"
+                "Found 0 products — the site structure has probably changed"
             )
         return items
 
@@ -114,7 +114,7 @@ class PlaywrightAdapter:
     async def _extract(
         page, page_url: str, fields: dict, item_selector: str
     ) -> list[ParsedItem]:
-        """Извлечение через JS в контексте страницы — быстрее поэлементных запросов."""
+        """Extraction via JS in the page context — faster than per-element queries."""
         rows = await page.eval_on_selector_all(
             item_selector,
             """(nodes, spec) => nodes.map(node => {

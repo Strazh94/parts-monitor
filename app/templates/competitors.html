@@ -1,39 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Конкуренты{% endblock %}
+{% block title %}Competitors{% endblock %}
 {% block content %}
 <div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-bold">Конкуренты</h1>
+    <h1 class="text-2xl font-bold">Competitors</h1>
 </div>
 
 <div class="bg-white rounded-lg shadow p-4 mb-6">
-    <h2 class="font-semibold mb-3">Добавить сайт</h2>
+    <h2 class="font-semibold mb-3">Add a site</h2>
     <form method="post" action="/competitors/add" class="grid md:grid-cols-4 gap-3">
-        <input name="name" required placeholder="Название компании"
+        <input name="name" required placeholder="Company name"
                class="border rounded px-3 py-2">
         <input name="url" required placeholder="https://example.com"
                class="border rounded px-3 py-2">
         <select name="engine" class="border rounded px-3 py-2">
-            <option value="http">HTTP-парсинг</option>
-            <option value="playwright">Playwright (для JS-сайтов)</option>
+            <option value="http">HTTP parsing</option>
+            <option value="playwright">Playwright (for JS sites)</option>
         </select>
-        <button class="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-500">Добавить</button>
+        <button class="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-500">Add</button>
     </form>
     <p class="text-xs text-gray-500 mt-2">
-        После добавления задайте селекторы парсинга в настройках сайта (JSON в parser_config).
+        After adding, set the parsing selectors in the site settings (JSON in parser_config).
     </p>
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-            <th class="p-3">Название</th>
-            <th class="p-3">Сайт</th>
-            <th class="p-3">Статус</th>
-            <th class="p-3">Последний запуск</th>
-            <th class="p-3">Товаров</th>
-            <th class="p-3">Ошибок</th>
-            <th class="p-3">Вкл</th>
-            <th class="p-3">Действия</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Site</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Last run</th>
+            <th class="p-3">Products</th>
+            <th class="p-3">Errors</th>
+            <th class="p-3">On</th>
+            <th class="p-3">Actions</th>
         </tr></thead>
         <tbody>
         {% for c in competitors %}
@@ -43,8 +43,8 @@
             <td class="p-3">
                 {% set status = c.status_label %}
                 <span class="px-2 py-0.5 rounded text-xs text-white
-                    {% if status == 'Работает' %}bg-emerald-600
-                    {% elif status == 'Ошибка' %}bg-red-600
+                    {% if status == 'Working' %}bg-emerald-600
+                    {% elif status == 'Error' %}bg-red-600
                     {% else %}bg-gray-400{% endif %}">{{ status }}</span>
             </td>
             <td class="p-3">
@@ -62,21 +62,21 @@
                 <div class="flex gap-2">
                     <form method="post" action="/competitors/{{ c.id }}/run">
                         <button class="px-2 py-1 bg-emerald-600 text-white rounded text-xs hover:bg-emerald-500"
-                                title="Запустить сбор данных">▶ Запустить</button>
+                                title="Run data collection">▶ Run</button>
                     </form>
                     <form method="post" action="/competitors/{{ c.id }}/toggle">
                         <button class="px-2 py-1 bg-slate-500 text-white rounded text-xs hover:bg-slate-400">
-                            {{ 'Выкл' if c.enabled else 'Вкл' }}</button>
+                            {{ 'Disable' if c.enabled else 'Enable' }}</button>
                     </form>
                     <form method="post" action="/competitors/{{ c.id }}/delete"
-                          onsubmit="return confirm('Удалить конкурента и его данные?')">
-                        <button class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-500">Удалить</button>
+                          onsubmit="return confirm('Delete this competitor and all its data?')">
+                        <button class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-500">Delete</button>
                     </form>
                 </div>
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="p-6 text-center text-gray-400">Пока нет конкурентов — добавьте первый сайт выше</td></tr>
+        <tr><td colspan="8" class="p-6 text-center text-gray-400">No competitors yet — add your first site above</td></tr>
         {% endfor %}
         </tbody>
     </table>

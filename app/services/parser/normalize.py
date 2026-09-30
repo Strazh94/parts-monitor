@@ -1,27 +1,27 @@
-"""Нормализация сырых данных парсинга: цены, статусы наличия, ключи."""
+"""Normalization of raw parsing data: prices, availability statuses, keys."""
 from __future__ import annotations
 
 import re
 
 from app.models import StockStatus
 
-# --- Цены: "12 500 ₽", "12.500,00 руб.", "1 250" -> 12500.0 ---
+# --- Prices: "12 500 ₽", "12.500,00 руб.", "1 250" -> 12500.0 ---
 
 _PRICE_RE = re.compile(r"(\d[\d\s\s.,]*)")
 
 
 def parse_price(raw: str | None) -> float | None:
-    """Извлекает число из строки цены любой форматировки."""
+    """Extracts a number from a price string in any formatting."""
     if not raw:
         return None
-    # Убираем всё кроме цифр и разделителей
+    # Remove everything except digits and separators
     cleaned = re.sub(r"[^\d.,\s]", "", raw).strip()
     m = _PRICE_RE.search(cleaned)
     if not m:
         return None
     num = m.group(1).replace(" ", "").replace("\xa0", "")
     if "," in num and "." in num:
-        # Последний разделитель — десятичный
+        # The last separator is the decimal one
         if num.rfind(",") > num.rfind("."):
             num = num.replace(".", "").replace(",", ".")
         else:
@@ -32,7 +32,7 @@ def parse_price(raw: str | None) -> float | None:
     elif num.count(".") > 1:
         num = num.replace(".", "")
     elif "." in num and len(num.split(".")[-1]) not in (2, 3):
-        # 12.500 — европейский формат тысяч
+        # 12.500 — European thousands format
         num = num.replace(".", "")
     try:
         return float(num)
@@ -40,11 +40,11 @@ def parse_price(raw: str | None) -> float | None:
         return None
 
 
-# --- Наличие (ТЗ п.16): "Много", "В наличии", "Под заказ", "Нет в наличии" ---
+# --- Availability (spec §16): "Много", "В наличии", "Под заказ", "Нет в наличии" ---
 
 _QTY_RE = re.compile(r"(\d+)")
 
-# Порядок важен: более специфичные правила раньше
+# Order matters: more specific rules come first
 _STOCK_RULES: list[tuple[tuple[str, ...], StockStatus]] = [
     (("нет в наличии", "отсутствует", "нет на складе", "н/в"), StockStatus.OUT_OF_STOCK),
     (("под заказ", "по запросу", "ожидается", "предзаказ"), StockStatus.ON_ORDER),
@@ -54,12 +54,12 @@ _STOCK_RULES: list[tuple[tuple[str, ...], StockStatus]] = [
 
 
 def parse_stock(raw: str | None) -> tuple[StockStatus, int | None]:
-    """Статус наличия -> (канонический статус, количество | None).
+    """Availability status -> (canonical status, quantity | None).
 
     - "Нет в наличии" -> 0
-    - "Под заказ" -> остаток неизвестен
-    - "В наличии" без числа -> наличие есть, количества нет (продажи не считаем)
-    - Число -> (IN_STOCK, число)
+    - "Под заказ" -> stock unknown
+    - "В наличии" without a number -> in stock, no quantity (not counted as a sale)
+    - A number -> (IN_STOCK, number)
     """
     if not raw:
         return StockStatus.UNKNOWN, None
@@ -73,21 +73,21 @@ def parse_stock(raw: str | None) -> tuple[StockStatus, int | None]:
                 if status == StockStatus.OUT_OF_STOCK:
                     return status, 0
                 if status == StockStatus.IN_STOCK:
-                    # "В наличии: 5" -> количество; иначе количество неизвестно
+                    # "В наличии: 5" -> quantity; otherwise the quantity is unknown
                     m = _QTY_RE.search(text)
                     return status, int(m.group(1)) if m else None
                 return status, None
 
-    # Строго число
+    # Strictly a number
     if re.fullmatch(r"\d+", text):
         return StockStatus.IN_STOCK, int(text)
     return StockStatus.UNKNOWN, None
 
 
-# --- Ключи сопоставления (ТЗ п.17) ---
+# --- Matching keys (spec §17) ---
 
 def normalize_key(value: str | None) -> str | None:
-    """Нормализация OEM/артикула/кросс-номера для сравнения.
+    """Normalizes an OEM/SKU/cross-number for comparison.
 
     "WG 972 546 013" == "WG972546013" == "wg-972-546-013"
     """
@@ -98,7 +98,7 @@ def normalize_key(value: str | None) -> str | None:
 
 
 def split_cross_numbers(raw: str | None) -> list[str]:
-    """Список кросс-номеров через запятую/точку с запятой/слэш."""
+    """A list of cross-numbers separated by comma/semicolon/slash."""
     if not raw:
         return []
     parts = re.split(r"[,;/]| или ", raw)

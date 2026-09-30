@@ -5,7 +5,7 @@ __pycache__/
 .venv/
 venv/
 
-# Окружение
+# Environment
 .env
 
 # IDE
@@ -13,12 +13,12 @@ venv/
 .vscode/
 *.swp
 
-# Логи и редакторы
+# Logs and editors
 *.log
 .DS_Store
 Thumbs.db
 
-# Тестовые артефакты
+# Test artifacts
 .pytest_cache/
 htmlcov/
 .coverage

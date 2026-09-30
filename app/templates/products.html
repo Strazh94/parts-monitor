@@ -1,62 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Товары{% endblock %}
+{% block title %}Products{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Товары</h1>
+<h1 class="text-2xl font-bold mb-4">Products</h1>
 
 <form method="get" class="bg-white rounded-lg shadow p-4 mb-4 grid md:grid-cols-6 gap-3 items-end">
     <div class="md:col-span-2">
-        <label class="text-xs text-gray-500">Поиск (артикул, OEM, название, бренд)</label>
-        <input name="q" value="{{ q }}" placeholder="DZ911234, WG9725, фильтр..."
+        <label class="text-xs text-gray-500">Search (SKU, OEM, name, brand)</label>
+        <input name="q" value="{{ q }}" placeholder="DZ911234, WG9725, filter..."
                class="w-full border rounded px-3 py-2">
     </div>
     <div>
-        <label class="text-xs text-gray-500">Рейтинг</label>
+        <label class="text-xs text-gray-500">Rating</label>
         <select name="rating" class="w-full border rounded px-3 py-2">
-            <option value="">Любой</option>
+            <option value="">Any</option>
             {% for r in ratings %}
             <option value="{{ r }}" {% if rating == r %}selected{% endif %}>{{ r }}</option>
             {% endfor %}
         </select>
     </div>
     <div>
-        <label class="text-xs text-gray-500">Мин. конкурентов</label>
+        <label class="text-xs text-gray-500">Min. competitors</label>
         <input type="number" name="min_competitors" value="{{ min_competitors or '' }}" min="0"
                class="w-full border rounded px-3 py-2">
     </div>
     <div>
-        <label class="text-xs text-gray-500">Сортировка</label>
+        <label class="text-xs text-gray-500">Sort</label>
         <select name="sort" class="w-full border rounded px-3 py-2">
-            <option value="index" {% if sort == 'index' %}selected{% endif %}>По индексу спроса</option>
-            <option value="sales30" {% if sort == 'sales30' %}selected{% endif %}>Продажи 30 дней</option>
-            <option value="sales7" {% if sort == 'sales7' %}selected{% endif %}>Продажи 7 дней</option>
-            <option value="demand" {% if sort == 'demand' %}selected{% endif %}>Среднедневной спрос</option>
-            <option value="competitors" {% if sort == 'competitors' %}selected{% endif %}>Конкурентов</option>
-            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена по возрастанию</option>
-            <option value="name" {% if sort == 'name' %}selected{% endif %}>Название</option>
+            <option value="index" {% if sort == 'index' %}selected{% endif %}>By demand index</option>
+            <option value="sales30" {% if sort == 'sales30' %}selected{% endif %}>Sales 30 days</option>
+            <option value="sales7" {% if sort == 'sales7' %}selected{% endif %}>Sales 7 days</option>
+            <option value="demand" {% if sort == 'demand' %}selected{% endif %}>Average daily demand</option>
+            <option value="competitors" {% if sort == 'competitors' %}selected{% endif %}>Competitors</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price ascending</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Name</option>
         </select>
     </div>
     <div class="flex items-center gap-3">
         <label class="flex items-center gap-1 text-sm">
-            <input type="checkbox" name="in_stock_only" {% if in_stock_only %}checked{% endif %}> в наличии
+            <input type="checkbox" name="in_stock_only" {% if in_stock_only %}checked{% endif %}> in stock
         </label>
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Найти</button>
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Search</button>
     </div>
 </form>
 
 <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-            <th class="p-3">Артикул</th>
-            <th class="p-3">Наименование</th>
-            <th class="p-3">Бренд</th>
-            <th class="p-3">Конкурентов</th>
-            <th class="p-3">Цена от</th>
-            <th class="p-3">Продажи 7д</th>
-            <th class="p-3">Продажи 30д</th>
-            <th class="p-3">Спрос/день</th>
-            <th class="p-3">Частота</th>
-            <th class="p-3">Рейтинг</th>
-            <th class="p-3">Индекс</th>
+            <th class="p-3">SKU</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Brand</th>
+            <th class="p-3">Competitors</th>
+            <th class="p-3">Price from</th>
+            <th class="p-3">Sales 7d</th>
+            <th class="p-3">Sales 30d</th>
+            <th class="p-3">Demand/day</th>
+            <th class="p-3">Frequency</th>
+            <th class="p-3">Rating</th>
+            <th class="p-3">Index</th>
         </tr></thead>
         <tbody>
         {% for product, m in rows %}
@@ -84,13 +84,13 @@
         </tr>
         {% else %}
         <tr><td colspan="11" class="p-6 text-center text-gray-400">
-            {% if q or rating or min_competitors %}Ничего не найдено{% else %}Нет данных — запустите сбор{% endif %}
+            {% if q or rating or min_competitors %}Nothing found{% else %}No data — run a collection{% endif %}
         </td></tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
 {% if rows|length == 200 %}
-<p class="text-xs text-gray-500 mt-2">Показаны первые 200 из найденных — уточните поиск или фильтры.</p>
+<p class="text-xs text-gray-500 mt-2">Showing the first 200 results — refine your search or filters.</p>
 {% endif %}
 {% endblock %}

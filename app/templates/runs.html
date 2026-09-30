@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Запуски парсинга{% endblock %}
+{% block title %}Parsing runs{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Контроль работы парсера (ТЗ п.24)</h1>
+<h1 class="text-2xl font-bold mb-4">Parser monitoring (spec §24)</h1>
 
 <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-            <th class="p-3">Конкурент</th>
-            <th class="p-3">Статус</th>
-            <th class="p-3">Запуск</th>
-            <th class="p-3">Завершение</th>
-            <th class="p-3">Страниц</th>
-            <th class="p-3">Товаров</th>
-            <th class="p-3">Новых</th>
-            <th class="p-3">Ошибок</th>
-            <th class="p-3">Триггер</th>
-            <th class="p-3">Ошибка</th>
+            <th class="p-3">Competitor</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Started</th>
+            <th class="p-3">Finished</th>
+            <th class="p-3">Pages</th>
+            <th class="p-3">Products</th>
+            <th class="p-3">New</th>
+            <th class="p-3">Errors</th>
+            <th class="p-3">Trigger</th>
+            <th class="p-3">Error</th>
         </tr></thead>
         <tbody>
         {% for run in runs %}
@@ -26,7 +26,7 @@
                     {% if run.status.value == 'ok' %}bg-emerald-600
                     {% elif run.status.value == 'error' %}bg-red-600
                     {% else %}bg-blue-500{% endif %}">
-                    {% if run.status.value == 'ok' %}Работает{% elif run.status.value == 'error' %}Ошибка{% else %}Идёт...{% endif %}
+                    {% if run.status.value == 'ok' %}Working{% elif run.status.value == 'error' %}Error{% else %}Running...{% endif %}
                 </span>
             </td>
             <td class="p-3">{{ run.started_at.strftime('%d.%m.%Y %H:%M') }}</td>
@@ -35,11 +35,11 @@
             <td class="p-3">{{ run.products_found }}</td>
             <td class="p-3">{{ run.products_new }}</td>
             <td class="p-3">{{ run.errors_count }}</td>
-            <td class="p-3">{{ 'Ручной' if run.trigger.value == 'manual' else 'Авто' }}</td>
+            <td class="p-3">{{ 'Manual' if run.trigger.value == 'manual' else 'Auto' }}</td>
             <td class="p-3 text-xs text-red-600 max-w-sm truncate">{{ run.error_message or '' }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="10" class="p-6 text-center text-gray-400">Запусков ещё не было</td></tr>
+        <tr><td colspan="10" class="p-6 text-center text-gray-400">No runs yet</td></tr>
         {% endfor %}
         </tbody>
     </table>

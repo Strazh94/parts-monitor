@@ -1,50 +1,50 @@
 {% extends "base.html" %}
-{% block title %}Главная — Мониторинг запчастей{% endblock %}
+{% block title %}Dashboard — Parts Monitoring{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-1">Сегодня обработано</h1>
+<h1 class="text-2xl font-bold mb-1">Processed today</h1>
 <p class="text-sm text-gray-500 mb-4">{{ today.strftime('%d.%m.%Y') }}</p>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-slate-800">{{ competitors_count }}</div>
-        <div class="text-sm text-gray-500">сайтов</div>
+        <div class="text-sm text-gray-500">sites</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-slate-800">{{ products_total }}</div>
-        <div class="text-sm text-gray-500">товаров</div>
+        <div class="text-sm text-gray-500">products</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-emerald-600">{{ in_stock }}</div>
-        <div class="text-sm text-gray-500">товаров в наличии</div>
+        <div class="text-sm text-gray-500">products in stock</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-orange-600">{{ stock_changes }}</div>
-        <div class="text-sm text-gray-500">изменений остатков</div>
+        <div class="text-sm text-gray-500">stock changes</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-blue-600">{{ price_changes }}</div>
-        <div class="text-sm text-gray-500">изменений цен</div>
+        <div class="text-sm text-gray-500">price changes</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-violet-600">{{ new_products }}</div>
-        <div class="text-sm text-gray-500">новых товаров</div>
+        <div class="text-sm text-gray-500">new products</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-red-500">{{ disappeared }}</div>
-        <div class="text-sm text-gray-500">исчезнувших товаров</div>
+        <div class="text-sm text-gray-500">disappeared products</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-3xl font-bold text-slate-800">{{ processed_today }}</div>
-        <div class="text-sm text-gray-500">проверено товаров (последний запуск)</div>
+        <div class="text-sm text-gray-500">products processed (last run)</div>
     </div>
 </div>
 
 <div class="grid md:grid-cols-2 gap-6">
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-lg font-semibold mb-3">ТОП-20 по динамике спроса</h2>
+        <h2 class="text-lg font-semibold mb-3">TOP-20 by demand dynamics</h2>
         <table class="w-full text-sm">
             <thead><tr class="text-left text-gray-500 border-b">
-                <th class="py-2">Товар</th><th>Спрос/день</th><th>Продажи 30д</th>
+                <th class="py-2">Product</th><th>Demand/day</th><th>Sales 30d</th>
             </tr></thead>
             <tbody>
             {% for product, m in top_demand %}
@@ -55,17 +55,17 @@
                 <td>{{ m.sales_30d if m else 0 }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="py-4 text-gray-400">Нет данных — запустите первый сбор</td></tr>
+            <tr><td colspan="3" class="py-4 text-gray-400">No data — run the first collection</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </section>
 
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-lg font-semibold mb-3">ТОП-20 для закупки</h2>
+        <h2 class="text-lg font-semibold mb-3">TOP-20 for purchasing</h2>
         <table class="w-full text-sm">
             <thead><tr class="text-left text-gray-500 border-b">
-                <th class="py-2">Товар</th><th>Индекс</th><th>Рейтинг</th><th>Конкурентов</th>
+                <th class="py-2">Product</th><th>Index</th><th>Rating</th><th>Competitors</th>
             </tr></thead>
             <tbody>
             {% for product, m in top_purchase %}
@@ -81,7 +81,7 @@
                 <td>{{ m.competitors_count if m else 0 }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="4" class="py-4 text-gray-400">Нет данных</td></tr>
+            <tr><td colspan="4" class="py-4 text-gray-400">No data</td></tr>
             {% endfor %}
             </tbody>
         </table>

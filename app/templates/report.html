@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Отчёт за {{ report.day.strftime('%d.%m.%Y') }}{% endblock %}
+{% block title %}Report for {{ report.day.strftime('%d.%m.%Y') }}{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-1">Итоги за {{ report.day.strftime('%d.%m.%Y') }}</h1>
-<p class="text-sm text-gray-500 mb-4">Отчёт формируется автоматически после завершения парсинга</p>
+<h1 class="text-2xl font-bold mb-1">Results for {{ report.day.strftime('%d.%m.%Y') }}</h1>
+<p class="text-sm text-gray-500 mb-4">The report is generated automatically after parsing finishes</p>
 
 {% if report.errors %}
 <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-    <b class="text-red-700">Ошибки при парсинге:</b>
+    <b class="text-red-700">Parsing errors:</b>
     <ul class="text-sm text-red-700 mt-1">
         {% for r in report.errors %}
-        <li>{{ r.competitor.name }} — {{ r.error_message or 'неизвестная ошибка' }}</li>
+        <li>{{ r.competitor.name }} — {{ r.error_message or 'unknown error' }}</li>
         {% endfor %}
     </ul>
 </div>
@@ -18,52 +18,52 @@
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-2xl font-bold">{{ report.sites_checked }}</div>
-        <div class="text-xs text-gray-500">Сайтов проверено</div>
+        <div class="text-xs text-gray-500">Sites checked</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-2xl font-bold">{{ report.products_checked }}</div>
-        <div class="text-xs text-gray-500">Товаров проверено</div>
+        <div class="text-xs text-gray-500">Products checked</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-2xl font-bold text-violet-600">{{ report.new_products }}</div>
-        <div class="text-xs text-gray-500">Новых товаров</div>
+        <div class="text-xs text-gray-500">New products</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-2xl font-bold text-blue-600">{{ report.price_changes }}</div>
-        <div class="text-xs text-gray-500">Изменений цены</div>
+        <div class="text-xs text-gray-500">Price changes</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-2xl font-bold text-emerald-600">{{ report.stock_decreased }}</div>
-        <div class="text-xs text-gray-500">Со снижением остатка</div>
+        <div class="text-xs text-gray-500">With stock decrease</div>
     </div>
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-2xl font-bold text-blue-500">{{ report.replenishments }}</div>
-        <div class="text-xs text-gray-500">Предполагаемых поступлений</div>
+        <div class="text-xs text-gray-500">Estimated restocks</div>
     </div>
 </div>
 
 <div class="grid md:grid-cols-2 gap-6">
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold mb-3">ТОП-50 по предполагаемым продажам</h2>
+        <h2 class="font-semibold mb-3">TOP-50 by estimated sales</h2>
         <table class="w-full text-sm">
-            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Товар</th><th>Продано (est.)</th></tr></thead>
+            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Product</th><th>Sold (est.)</th></tr></thead>
             <tbody>
             {% for product, sold in report.top_sales %}
             <tr class="border-b">
                 <td class="py-1.5">{% if product %}<a href="/products/{{ product.id }}" class="text-blue-600 hover:underline">{{ product.name }}</a>{% else %}—{% endif %}</td>
-                <td class="font-semibold text-emerald-600">{{ sold }} шт.</td>
+                <td class="font-semibold text-emerald-600">{{ sold }} pcs</td>
             </tr>
             {% else %}
-            <tr><td colspan="2" class="py-3 text-gray-400">Нет данных за сегодня</td></tr>
+            <tr><td colspan="2" class="py-3 text-gray-400">No data for today</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </section>
 
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold mb-3">ТОП товаров с ростом спроса</h2>
+        <h2 class="font-semibold mb-3">TOP products with growing demand</h2>
         <table class="w-full text-sm">
-            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Товар</th><th>Спрос/день</th><th>Индекс</th></tr></thead>
+            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Product</th><th>Demand/day</th><th>Index</th></tr></thead>
             <tbody>
             {% for product, m in report.top_growing %}
             <tr class="border-b">
@@ -72,16 +72,16 @@
                 <td class="font-semibold">{{ m.demand_index }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="py-3 text-gray-400">Нет данных</td></tr>
+            <tr><td colspan="3" class="py-3 text-gray-400">No data</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </section>
 
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold mb-3">Наиболее значительные изменения цен</h2>
+        <h2 class="font-semibold mb-3">Most significant price changes</h2>
         <table class="w-full text-sm">
-            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Товар</th><th>Было</th><th>Стало</th></tr></thead>
+            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Product</th><th>Before</th><th>After</th></tr></thead>
             <tbody>
             {% for ev in report.price_events %}
             <tr class="border-b">
@@ -95,16 +95,16 @@
                 <td class="font-semibold">{% if ev.new_price %}{{ '%.0f'|format(ev.new_price) }} ₽{% else %}—{% endif %}</td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="py-3 text-gray-400">Нет изменений</td></tr>
+            <tr><td colspan="3" class="py-3 text-gray-400">No changes</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </section>
 
     <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="font-semibold mb-3">Появились сразу у нескольких конкурентов</h2>
+        <h2 class="font-semibold mb-3">Appeared at several competitors at once</h2>
         <table class="w-full text-sm">
-            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Товар</th><th>Конкурентов</th></tr></thead>
+            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Product</th><th>Competitors</th></tr></thead>
             <tbody>
             {% for product, cnt in report.multi_competitor %}
             <tr class="border-b">
@@ -112,12 +112,12 @@
                 <td class="font-semibold">{{ cnt }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="2" class="py-3 text-gray-400">Нет данных</td></tr>
+            <tr><td colspan="2" class="py-3 text-gray-400">No data</td></tr>
             {% endfor %}
             </tbody>
         </table>
 
-        <h2 class="font-semibold mb-3 mt-6">ТОП новых популярных позиций</h2>
+        <h2 class="font-semibold mb-3 mt-6">TOP new popular items</h2>
         <table class="w-full text-sm">
             <tbody>
             {% for p in report.new_items %}
@@ -125,7 +125,7 @@
                 <td class="py-1.5"><a href="/products/{{ p.id }}" class="text-blue-600 hover:underline">{{ p.name }}</a></td>
             </tr>
             {% else %}
-            <tr><td class="py-3 text-gray-400">Нет новых товаров</td></tr>
+            <tr><td class="py-3 text-gray-400">No new products</td></tr>
             {% endfor %}
             </tbody>
         </table>

@@ -1,4 +1,4 @@
-"""Jinja2-шаблоны (вынесено отдельно во избежание циклических импортов)."""
+"""Jinja2 templates (kept separate to avoid circular imports)."""
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates

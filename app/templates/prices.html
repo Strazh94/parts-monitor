@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Анализ цен{% endblock %}
+{% block title %}Price analysis{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Анализ цен (ТЗ п.13)</h1>
+<h1 class="text-2xl font-bold mb-4">Price analysis (spec §13)</h1>
 
 <form method="get" class="bg-white rounded-lg shadow p-4 mb-4 flex gap-3">
-    <input name="q" value="{{ q }}" placeholder="Артикул или название"
+    <input name="q" value="{{ q }}" placeholder="SKU or name"
            class="flex-1 border rounded px-3 py-2">
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Найти</button>
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Search</button>
 </form>
 
 <div class="space-y-4">
@@ -18,15 +18,15 @@
             <span class="text-gray-400 font-mono text-sm ml-2">{{ product.article or product.oem or '' }}</span>
         </div>
         <div class="text-right text-sm">
-            <div>Мин: <b>{{ '%.0f'|format(m.price_min) }} ₽</b>
-                 · Макс: <b>{{ '%.0f'|format(m.price_max) }} ₽</b></div>
-            <div>Средняя: <b>{{ '%.0f'|format(m.price_avg) }} ₽</b>
-                 · Медиана: <b>{{ '%.0f'|format(m.price_median) }} ₽</b></div>
+            <div>Min: <b>{{ '%.0f'|format(m.price_min) }} ₽</b>
+                 · Max: <b>{{ '%.0f'|format(m.price_max) }} ₽</b></div>
+            <div>Average: <b>{{ '%.0f'|format(m.price_avg) }} ₽</b>
+                 · Median: <b>{{ '%.0f'|format(m.price_median) }} ₽</b></div>
         </div>
     </div>
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-            <th class="py-1">Конкурент</th><th>Цена</th><th>Наличие</th>
+            <th class="py-1">Competitor</th><th>Price</th><th>Availability</th>
         </tr></thead>
         <tbody>
         {% for o in offers_by_product.get(product.id, []) %}
@@ -35,10 +35,10 @@
             <td class="font-semibold">{% if o.price %}{{ '%.0f'|format(o.price) }} ₽{% else %}—{% endif %}
                 {% if o.old_price %}<s class="text-gray-400 text-xs">{{ '%.0f'|format(o.old_price) }} ₽</s>{% endif %}</td>
             <td>
-                {% if o.stock_status.value == 'in_stock' %}<span class="text-emerald-600">В наличии</span>
-                {% elif o.stock_status.value == 'out_of_stock' %}<span class="text-red-500">Нет</span>
-                {% elif o.stock_status.value == 'on_order' %}<span class="text-amber-600">Под заказ</span>
-                {% elif o.stock_status.value == 'many' %}<span class="text-blue-600">Много</span>
+                {% if o.stock_status.value == 'in_stock' %}<span class="text-emerald-600">In stock</span>
+                {% elif o.stock_status.value == 'out_of_stock' %}<span class="text-red-500">None</span>
+                {% elif o.stock_status.value == 'on_order' %}<span class="text-amber-600">On order</span>
+                {% elif o.stock_status.value == 'many' %}<span class="text-blue-600">Many</span>
                 {% else %}—{% endif %}
             </td>
         </tr>
@@ -47,7 +47,7 @@
     </table>
 </div>
 {% else %}
-<div class="bg-white rounded-lg shadow p-6 text-center text-gray-400">Нет данных для анализа</div>
+<div class="bg-white rounded-lg shadow p-6 text-center text-gray-400">No data to analyze</div>
 {% endfor %}
 </div>
 {% endblock %}

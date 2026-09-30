@@ -1,7 +1,7 @@
-"""Модели базы данных.
+"""Database models.
 
-История остатков хранится в append-only таблице snapshots (ТЗ п.6) —
-значения предыдущих дней никогда не перезаписываются.
+Stock history is stored in the append-only snapshots table (spec §6) —
+values of previous days are never overwritten.
 """
 from __future__ import annotations
 
@@ -29,20 +29,20 @@ from app.database import Base
 
 
 class StockStatus(str, enum.Enum):
-    """Канонические статусы наличия (ТЗ п.16)."""
+    """Canonical availability statuses (spec §16)."""
 
-    IN_STOCK = "in_stock"          # в наличии (без количества или с ним)
-    OUT_OF_STOCK = "out_of_stock"  # нет в наличии -> 0
-    ON_ORDER = "on_order"          # под заказ -> остаток неизвестен
-    MANY = "many"                  # "много" -> количество неизвестно
-    UNKNOWN = "unknown"            # данные не получены
+    IN_STOCK = "in_stock"          # in stock (with or without a quantity)
+    OUT_OF_STOCK = "out_of_stock"  # out of stock -> 0
+    ON_ORDER = "on_order"          # on order -> stock unknown
+    MANY = "many"                  # "many" -> quantity unknown
+    UNKNOWN = "unknown"            # data not retrieved
 
 
 class EngineType(str, enum.Enum):
-    """Тип движка парсинга сайта."""
+    """Site parsing engine type."""
 
     HTTP = "http"          # requests/httpx + BeautifulSoup
-    PLAYWRIGHT = "playwright"  # для сайтов на JavaScript
+    PLAYWRIGHT = "playwright"  # for JavaScript sites
 
 
 class RunStatus(str, enum.Enum):
@@ -52,24 +52,24 @@ class RunStatus(str, enum.Enum):
 
 
 class RunTrigger(str, enum.Enum):
-    AUTO = "auto"    # по расписанию
-    MANUAL = "manual"  # кнопка "Запустить сбор данных"
+    AUTO = "auto"    # by schedule
+    MANUAL = "manual"  # the "Run data collection" button
 
 
 class ChangeType(str, enum.Enum):
-    """Тип изменения между днями (ТЗ п.7, 15)."""
+    """Type of change between days (spec §7, 15)."""
 
-    SALES = "sales"                    # снижение остатка -> предполагаемая продажа
-    REPLENISHMENT = "replenishment"    # рост остатка -> поступление
+    SALES = "sales"                    # stock decrease -> estimated sale
+    REPLENISHMENT = "replenishment"    # stock increase -> restock
     PRICE_DOWN = "price_down"
     PRICE_UP = "price_up"
-    APPEARED = "appeared"              # новый товар
-    DISAPPEARED = "disappeared"        # товар исчез из каталога
-    STATUS_ONLY = "status_only"        # изменился статус наличия без количества
+    APPEARED = "appeared"              # new product
+    DISAPPEARED = "disappeared"        # product disappeared from the catalog
+    STATUS_ONLY = "status_only"        # availability status changed without quantity
 
 
 class Competitor(Base):
-    """Сайт конкурента (ТЗ п.4, 23)."""
+    """Competitor website (spec §4, 23)."""
 
     __tablename__ = "competitors"
 
@@ -80,7 +80,7 @@ class Competitor(Base):
     engine: Mapped[EngineType] = mapped_column(
         Enum(EngineType, name="engine_type"), default=EngineType.HTTP
     )
-    # Конфиг парсинга: селекторы, правила пагинации, маппинг статусов
+    # Parsing config: selectors, pagination rules, status mapping
     parser_config: Mapped[dict] = mapped_column(JSON, default=dict)
     categories: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -103,22 +103,22 @@ class Competitor(Base):
 
     @property
     def status_label(self) -> str:
-        """Работает / Ошибка (ТЗ п.24)."""
+        """Working / Error (spec §24)."""
         run = self.last_run
         if run is None:
-            return "Не запускался"
+            return "Never run"
         if run.status == RunStatus.RUNNING:
-            return "Работает"
+            return "Working"
         if run.status == RunStatus.OK:
-            return "Работает"
-        return "Ошибка"
+            return "Working"
+        return "Error"
 
 
 class Product(Base):
-    """Канонический товар — объединяет позиции разных конкурентов (ТЗ п.17).
+    """Canonical product — combines positions from different competitors (spec §17).
 
-    Идентификация по OEM / артикулу / кросс-номерам,
-    название — только дополнительный фактор.
+    Identified by OEM / SKU / cross-numbers,
+    the name is only an additional factor.
     """
 
     __tablename__ = "products"
@@ -128,7 +128,7 @@ class Product(Base):
     brand: Mapped[str | None] = mapped_column(String(200))
     article: Mapped[str | None] = mapped_column(String(100))
     oem: Mapped[str | None] = mapped_column(String(100))
-    # Аналоги / кросс-номера
+    # Analogs / cross-numbers
     cross_numbers: Mapped[list] = mapped_column(JSON, default=list)
     applicability: Mapped[str | None] = mapped_column(String(500))  # SHACMAN, SITRAK...
     category: Mapped[str | None] = mapped_column(String(300))
@@ -146,7 +146,7 @@ class Product(Base):
         back_populates="product", uselist=False, cascade="all, delete-orphan"
     )
 
-    # Индексы для поиска и сопоставления (ТЗ п.17, 18)
+    # Indexes for search and matching (spec §17, 18)
     __table_args__ = (
         Index("ix_products_article", "article"),
         Index("ix_products_oem", "oem"),
@@ -155,7 +155,7 @@ class Product(Base):
 
 
 class Offer(Base):
-    """Предложение конкретного конкурента о товаре."""
+    """A specific competitor's offer for a product."""
 
     __tablename__ = "offers"
 
@@ -165,18 +165,18 @@ class Offer(Base):
         ForeignKey("competitors.id", ondelete="CASCADE")
     )
     url: Mapped[str] = mapped_column(String(1000))
-    # Текущее состояние (обновляется при каждом парсинге)
+    # Current state (updated on every parse)
     price: Mapped[float | None] = mapped_column(Numeric(12, 2))
     old_price: Mapped[float | None] = mapped_column(Numeric(12, 2))
-    discount: Mapped[float | None] = mapped_column(Numeric(12, 2))  # руб.
+    discount: Mapped[float | None] = mapped_column(Numeric(12, 2))  # rub.
     discount_pct: Mapped[float | None] = mapped_column(Numeric(5, 2))  # %
-    stock_qty: Mapped[int | None] = mapped_column(Integer)  # None = неизвестно
+    stock_qty: Mapped[int | None] = mapped_column(Integer)  # None = unknown
     stock_status: Mapped[StockStatus] = mapped_column(
         Enum(StockStatus, name="stock_status"), default=StockStatus.UNKNOWN
     )
     warehouse: Mapped[str | None] = mapped_column(String(300))
     delivery_time: Mapped[str | None] = mapped_column(String(200))
-    # "Товар исчез из каталога" (ТЗ п.16)
+    # "Product disappeared from the catalog" (spec §16)
     disappeared: Mapped[bool] = mapped_column(Boolean, default=False)
     first_seen_at: Mapped[date] = mapped_column(Date, server_default=func.current_date())
     last_seen_at: Mapped[date] = mapped_column(Date, server_default=func.current_date())
@@ -195,10 +195,10 @@ class Offer(Base):
 
 
 class Snapshot(Base):
-    """Ежедневный снимок состояния товара (ТЗ п.6 — главное требование).
+    """Daily snapshot of a product's state (spec §6 — the key requirement).
 
-    Append-only: строка создаётся один раз в день и не изменяется.
-    Нельзя удалять предыдущие данные после нового парсинга (ТЗ п.25).
+    Append-only: a row is created once a day and never modified.
+    Previous data must not be deleted after a new parse (spec §25).
     """
 
     __tablename__ = "snapshots"
@@ -228,7 +228,7 @@ class Snapshot(Base):
 
 
 class ParseRun(Base):
-    """Журнал запуска парсинга для контроля работы (ТЗ п.24)."""
+    """Parse run log for monitoring (spec §24)."""
 
     __tablename__ = "parse_runs"
 
@@ -254,7 +254,7 @@ class ParseRun(Base):
 
 
 class ChangeEvent(Base):
-    """Зафиксированное изменение между днями (ТЗ п.7, 15, 20)."""
+    """Recorded change between days (spec §7, 15, 20)."""
 
     __tablename__ = "change_events"
 
@@ -266,7 +266,7 @@ class ChangeEvent(Base):
     )
     day: Mapped[date] = mapped_column(Date)
     change_type: Mapped[ChangeType] = mapped_column(Enum(ChangeType, name="change_type"))
-    # Δ остатка: отрицательное = продажа, положительное = поступление
+    # Δ stock: negative = sale, positive = restock
     delta_qty: Mapped[int | None] = mapped_column(Integer)
     old_price: Mapped[float | None] = mapped_column(Numeric(12, 2))
     new_price: Mapped[float | None] = mapped_column(Numeric(12, 2))
@@ -278,32 +278,32 @@ class ChangeEvent(Base):
 
 
 class ProductMetrics(Base):
-    """Пересчитываемые метрики спроса (ТЗ п.8, 9, 12, 13)."""
+    """Recalculated demand metrics (spec §8, 9, 12, 13)."""
 
     __tablename__ = "product_metrics"
 
     product_id: Mapped[int] = mapped_column(
         ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
     )
-    # Предполагаемые продажи (снижение остатков) за периоды
+    # Estimated sales (stock decreases) over periods
     sales_1d: Mapped[int] = mapped_column(Integer, default=0)
     sales_7d: Mapped[int] = mapped_column(Integer, default=0)
     sales_14d: Mapped[int] = mapped_column(Integer, default=0)
     sales_30d: Mapped[int] = mapped_column(Integer, default=0)
     sales_60d: Mapped[int] = mapped_column(Integer, default=0)
     sales_90d: Mapped[int] = mapped_column(Integer, default=0)
-    # Среднедневной спрос = продажи / дни наблюдения
+    # Average daily demand = sales / days observed
     avg_daily_demand: Mapped[float] = mapped_column(Numeric(10, 3), default=0)
-    # Частота продаж: % дней со снижением остатка
+    # Sales frequency: % of days with a stock decrease
     sales_frequency_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
     days_observed: Mapped[int] = mapped_column(Integer, default=0)
-    # Рейтинг: A / B / C / D / NEW (ТЗ п.9)
+    # Rating: A / B / C / D / NEW (spec §9)
     rating: Mapped[str] = mapped_column(String(4), default="NEW")
-    # Сводный индекс спроса 0..100 (ТЗ п.12)
+    # Overall demand index 0..100 (spec §12)
     demand_index: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
-    # Сколько конкурентов продают артикул (ТЗ п.11)
+    # How many competitors sell this SKU (spec §11)
     competitors_count: Mapped[int] = mapped_column(Integer, default=0)
-    # Статистика цен (ТЗ п.13)
+    # Price statistics (spec §13)
     price_min: Mapped[float | None] = mapped_column(Numeric(12, 2))
     price_max: Mapped[float | None] = mapped_column(Numeric(12, 2))
     price_avg: Mapped[float | None] = mapped_column(Numeric(12, 2))
@@ -317,7 +317,7 @@ class ProductMetrics(Base):
 
 
 class AppSetting(Base):
-    """Настройки системы: настраиваемые веса индекса и пр. (ТЗ п.12)."""
+    """System settings: configurable index weights etc. (spec §12)."""
 
     __tablename__ = "app_settings"
 

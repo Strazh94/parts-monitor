@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Настройки{% endblock %}
+{% block title %}Settings{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Настройки парсинга</h1>
+<h1 class="text-2xl font-bold mb-4">Parsing settings</h1>
 
 <form method="post" action="/settings/weights" class="bg-white rounded-lg shadow p-5 mb-6 max-w-3xl">
-    <h2 class="font-semibold mb-1">Расписание автоматического запуска (ТЗ п.3)</h2>
-    <p class="text-xs text-gray-500 mb-3">Рекомендуемое окно: 20:00–23:00 по Москве</p>
+    <h2 class="font-semibold mb-1">Automatic run schedule (spec §3)</h2>
+    <p class="text-xs text-gray-500 mb-3">Recommended window: 20:00–23:00 Moscow time</p>
     <div class="flex gap-4 items-center mb-6">
-        <label class="text-sm">Время (МСК):
+        <label class="text-sm">Time (MSK):
             <input type="number" name="hour" min="0" max="23" value="{{ schedule.hour }}"
                    class="w-20 border rounded px-2 py-1 ml-2"> :
             <input type="number" name="minute" min="0" max="59" value="{{ schedule.minute }}"
@@ -15,36 +15,36 @@
         </label>
     </div>
 
-    <h2 class="font-semibold mb-1">Веса индекса спроса (ТЗ п.12)</h2>
-    <p class="text-xs text-gray-500 mb-3">Формула индекса 0–100 настраивается: измените веса и сохраните</p>
+    <h2 class="font-semibold mb-1">Demand index weights (spec §12)</h2>
+    <p class="text-xs text-gray-500 mb-3">The 0–100 index formula is configurable: change the weights and save</p>
     <div class="grid md:grid-cols-3 gap-4 mb-4">
-        <label class="text-sm">Объем продаж (30 дн)
+        <label class="text-sm">Sales volume (30 days)
             <input type="number" name="w_sales_volume" value="{{ weights.w_sales_volume }}"
                    class="w-full border rounded px-3 py-2 mt-1"></label>
-        <label class="text-sm">Частота продаж
+        <label class="text-sm">Sales frequency
             <input type="number" name="w_frequency" value="{{ weights.w_frequency }}"
                    class="w-full border rounded px-3 py-2 mt-1"></label>
-        <label class="text-sm">Количество конкурентов
+        <label class="text-sm">Number of competitors
             <input type="number" name="w_competitors" value="{{ weights.w_competitors }}"
                    class="w-full border rounded px-3 py-2 mt-1"></label>
-        <label class="text-sm">Динамика остатков
+        <label class="text-sm">Stock dynamics
             <input type="number" name="w_stock_dynamics" value="{{ weights.w_stock_dynamics }}"
                    class="w-full border rounded px-3 py-2 mt-1"></label>
-        <label class="text-sm">Изменение цены
+        <label class="text-sm">Price change
             <input type="number" name="w_price_change" value="{{ weights.w_price_change }}"
                    class="w-full border rounded px-3 py-2 mt-1"></label>
-        <label class="text-sm">Дни наблюдения
+        <label class="text-sm">Days observed
             <input type="number" name="w_days_observed" value="{{ weights.w_days_observed }}"
                    class="w-full border rounded px-3 py-2 mt-1"></label>
     </div>
-    <button class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Сохранить</button>
+    <button class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Save</button>
 </form>
 
 <div class="bg-white rounded-lg shadow p-5 max-w-3xl">
-    <h2 class="font-semibold mb-2">Селекторы парсинга сайта</h2>
+    <h2 class="font-semibold mb-2">Site parsing selectors</h2>
     <p class="text-sm text-gray-600 mb-2">
-        Конфиг каждого конкурента хранится в поле <code class="bg-gray-100 px-1">parser_config</code>.
-        Пример структуры:
+        Each competitor's config is stored in the field <code class="bg-gray-100 px-1">parser_config</code>.
+        Example structure:
     </p>
     <pre class="bg-slate-800 text-slate-100 text-xs rounded p-4 overflow-x-auto">{
   "start_urls": ["https://site.ru/catalog/page-{page}"],
@@ -64,8 +64,8 @@
   }
 }</pre>
     <p class="text-xs text-gray-500 mt-2">
-        Типы движка: <b>http</b> — обычные сайты; <b>playwright</b> — сайты на JavaScript.
-        Тип меняется при добавлении конкурента.
+        Engine types: <b>http</b> — regular sites; <b>playwright</b> — JavaScript sites.
+        The type is set when adding a competitor.
     </p>
 </div>
 {% endblock %}

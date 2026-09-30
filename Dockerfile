@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Зависимости кешируются слоем — пересборка быстрее
+# Dependencies are cached by the layer — rebuilds are faster
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

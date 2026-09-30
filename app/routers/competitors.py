@@ -1,4 +1,4 @@
-﻿"""РЈРїСЂР°РІР»РµРЅРёРµ РєРѕРЅРєСѓСЂРµРЅС‚Р°РјРё (РўР— Рї.4, 23): РґРѕР±Р°РІР»РµРЅРёРµ, РѕС‚РєР»СЋС‡РµРЅРёРµ, Р·Р°РїСѓСЃРє."""
+﻿"""Competitor management (spec §4, 23): add, disable, run."""
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
@@ -61,7 +61,7 @@ def delete_competitor(competitor_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{competitor_id}/run")
 async def run_now(competitor_id: int, db: Session = Depends(get_db)):
-    """Р СѓС‡РЅРѕР№ Р·Р°РїСѓСЃРє: РєРЅРѕРїРєР° В«Р—Р°РїСѓСЃС‚РёС‚СЊ СЃР±РѕСЂ РґР°РЅРЅС‹С…В» (РўР— Рї.3)."""
+    """Manual run: the "Run data collection" button (spec §3)."""
     competitor = db.get(Competitor, competitor_id)
     if competitor:
         await run_competitor(db, competitor, trigger="manual")

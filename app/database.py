@@ -1,4 +1,4 @@
-"""Подключение к базе данных."""
+"""Database connection."""
 from collections.abc import Iterator
 
 from sqlalchemy import create_engine
@@ -15,7 +15,7 @@ class Base(DeclarativeBase):
 
 
 def get_db() -> Iterator[Session]:
-    """Зависимость FastAPI: сессия БД на запрос."""
+    """FastAPI dependency: a DB session per request."""
     db = SessionLocal()
     try:
         yield db

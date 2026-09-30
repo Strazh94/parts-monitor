@@ -1,25 +1,25 @@
 {% extends "base.html" %}
-{% block title %}ТОП продаж{% endblock %}
+{% block title %}Top sales{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-1">ТОП продаж</h1>
+<h1 class="text-2xl font-bold mb-1">Top sales</h1>
 <p class="text-sm text-gray-500 mb-4">
-    Предполагаемые продажи на основании изменения публичного остатка (ТЗ п.29)
+    Estimated sales based on changes in the public stock level (spec §29)
 </p>
 
 <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
             <th class="p-3">#</th>
-            <th class="p-3">Артикул</th>
-            <th class="p-3">Наименование</th>
-            <th class="p-3">Продажи 7д</th>
-            <th class="p-3">Продажи 14д</th>
-            <th class="p-3">Продажи 30д</th>
-            <th class="p-3">Продажи 90д</th>
-            <th class="p-3">Спрос/день</th>
-            <th class="p-3">Частота</th>
-            <th class="p-3">Конкурентов</th>
-            <th class="p-3">Рейтинг</th>
+            <th class="p-3">SKU</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Sales 7d</th>
+            <th class="p-3">Sales 14d</th>
+            <th class="p-3">Sales 30d</th>
+            <th class="p-3">Sales 90d</th>
+            <th class="p-3">Demand/day</th>
+            <th class="p-3">Frequency</th>
+            <th class="p-3">Competitors</th>
+            <th class="p-3">Rating</th>
         </tr></thead>
         <tbody>
         {% for product, m in rows %}
@@ -42,7 +42,7 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="11" class="p-6 text-center text-gray-400">Нет данных — запустите сбор</td></tr>
+        <tr><td colspan="11" class="p-6 text-center text-gray-400">No data — run a collection</td></tr>
         {% endfor %}
         </tbody>
     </table>

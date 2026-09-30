@@ -1,7 +1,7 @@
-"""Оркестратор запуска парсинга одного конкурента.
+"""Orchestrator for parsing a single competitor.
 
-Цепочка: скачать -> распарсить -> сопоставить -> сохранить снапшот ->
-зафиксировать изменения -> обновить статус запуска (ТЗ п.24).
+Chain: download -> parse -> match -> save snapshot ->
+record changes -> update run status (spec §24).
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 async def run_competitor(
     db: Session, competitor: Competitor, trigger: str = "auto"
 ) -> ParseRun:
-    """Полный проход по одному сайту. Создаёт запись ParseRun."""
+    """Full pass over a single site. Creates a ParseRun record."""
     run = ParseRun(
         competitor_id=competitor.id,
         trigger=RunTrigger(trigger),
@@ -57,21 +57,21 @@ async def run_competitor(
         run.errors_count = 1
         run.finished_at = datetime.utcnow()
         db.commit()
-        logger.warning("Парсинг %s: %s", competitor.name, exc)
+        logger.warning("Parsing %s: %s", competitor.name, exc)
     except Exception as exc:  # noqa: BLE001
         db.rollback()
         run = db.get(ParseRun, run.id) or run
         run.status = RunStatus.ERROR
-        run.error_message = f"Непредвиденная ошибка: {exc}"
+        run.error_message = f"Unexpected error: {exc}"
         run.errors_count = 1
         run.finished_at = datetime.utcnow()
         db.add(run)
         db.commit()
-        logger.exception("Парсинг %s упал", competitor.name)
+        logger.exception("Parsing %s failed", competitor.name)
     return run
 
 
-# Последний адаптер — для передачи числа страниц в ParseRun
+# Last adapter — used to pass the page count into ParseRun
 class _Last:
     value = 0
 
@@ -80,7 +80,7 @@ _last_adapter = _Last()
 
 
 async def _fetch_items(competitor: Competitor) -> list[ParsedItem]:
-    """Загрузка товаров: HTTP-движок (для JS-сайтов — Playwright, п.2)."""
+    """Fetch products: HTTP engine (for JS sites — Playwright, §2)."""
     config = competitor.parser_config or {}
 
     async def on_progress(pages: int, _count: int) -> None:
@@ -101,12 +101,12 @@ async def _fetch_items(competitor: Competitor) -> list[ParsedItem]:
 def _process_items(
     db: Session, competitor: Competitor, items: list[ParsedItem]
 ) -> dict:
-    """Сопоставление, обновление офферов, снапшот и дифф-события."""
+    """Matching, updating offers, snapshot and diff events."""
     today = date.today()
     matcher = ProductMatcher(db)
     new_count = 0
 
-    # Индекс существующих офферов конкурента: url -> offer
+    # Index of the competitor's existing offers: url -> offer
     existing_offers = {
         o.url: o
         for o in db.scalars(
@@ -131,7 +131,7 @@ def _process_items(
             if offer.product_id != product.id:
                 offer.product_id = product.id
 
-        # Обновляем текущее состояние оффера
+        # Update the offer's current state
         stock_status, stock_qty = _stock(item)
         offer.price = item.price
         offer.old_price = item.old_price
@@ -145,7 +145,7 @@ def _process_items(
             offer.first_seen_at = today
         db.flush()
 
-        # Ежедневный снапшот (append-only, ТЗ п.6)
+        # Daily snapshot (append-only, spec §6)
         snapshot = db.scalar(
             select(Snapshot).where(
                 Snapshot.offer_id == offer.id, Snapshot.day == today
@@ -165,7 +165,7 @@ def _process_items(
             db.flush()
             _record_changes(db, offer, product, snapshot, is_new_offer)
 
-    # Товары, которые были на сайте, но не встретились в этом проходе
+    # Products that were on the site but not seen in this pass
     _mark_disappeared(db, competitor, set(existing_offers), items, today)
     db.flush()
     return {"new": new_count}
@@ -184,7 +184,7 @@ def _record_changes(
     snapshot: Snapshot,
     is_new_offer: bool,
 ) -> None:
-    """Сравнение со вчерашним днём (ТЗ п.7, 15)."""
+    """Comparison with yesterday (spec §7, 15)."""
     today = snapshot.day
     prev = db.scalar(
         select(Snapshot).where(
@@ -208,7 +208,7 @@ def _record_changes(
     if prev is None:
         return
 
-    # Изменение остатка
+    # Stock change
     if (
         prev.stock_qty is not None
         and snapshot.stock_qty is not None
@@ -216,9 +216,9 @@ def _record_changes(
     ):
         delta = snapshot.stock_qty - prev.stock_qty
         if delta < 0:
-            change = ChangeType.SALES  # предполагаемая продажа
+            change = ChangeType.SALES  # estimated sale
         else:
-            change = ChangeType.REPLENISHMENT  # поступление
+            change = ChangeType.REPLENISHMENT  # restock
         db.add(
             ChangeEvent(
                 product_id=product.id,
@@ -230,7 +230,7 @@ def _record_changes(
             )
         )
 
-    # Изменение цены
+    # Price change
     if prev.price is not None and snapshot.price is not None and prev.price != snapshot.price:
         db.add(
             ChangeEvent(
@@ -256,7 +256,7 @@ def _mark_disappeared(
     items: list[ParsedItem],
     today: date,
 ) -> None:
-    """«Товар исчез из каталога» (ТЗ п.16) — не считаем продажей."""
+    """The "product disappeared from the catalog" state (spec §16) — not counted as a sale."""
     parsed_urls = {i.url for i in items}
     offers = db.scalars(
         select(Offer).where(Offer.competitor_id == competitor.id)

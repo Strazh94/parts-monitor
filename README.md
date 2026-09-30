@@ -1,71 +1,71 @@
-# Мониторинг запчастей конкурентов
+# Competitor Parts Price Monitoring
 
-Система ежедневного мониторинга цен, остатков и динамики продаж запчастей
-конкурентов. Собирает данные с сайтов, хранит историю изменений, рассчитывает
-предполагаемые продажи, рейтинги спроса и рекомендации к закупке.
+Daily monitoring system for competitors' spare parts prices, stock levels and
+sales dynamics. Collects data from websites, stores change history, calculates
+estimated sales, demand ratings and purchase recommendations.
 
-Интерфейс — веб-приложение в браузере, без командной строки.
+The interface is a web application in the browser — no command line required.
 
-## Быстрый старт (одна команда)
+## Quick start (one command)
 
 ```bash
 git clone https://github.com/Strazh94/parts-monitor.git && cd parts-monitor && docker compose up -d --build
 ```
 
-Готово. Откройте в браузере: **http://localhost:8000**
+Done. Open in your browser: **http://localhost:8000**
 
-Требуется только Docker с включённым Docker Compose.
-База данных (PostgreSQL) и ежедневное расписание поднимаются автоматически.
+Only Docker with Docker Compose enabled is required.
+The database (PostgreSQL) and the daily schedule are started automatically.
 
-### Первая настройка (3 шага)
+### First-time setup (3 steps)
 
-1. **Конкуренты** → ввести название сайта, URL, движок (`http` — обычный сайт,
-   `playwright` — сайт на JavaScript) → «Добавить».
-2. **Настройки** → внизу есть пример конфигурации селекторов (`parser_config`) —
-   скопировать нужный блок под структуру сайта.
-3. Нажать **▶ Запустить** на странице «Конкуренты».
+1. **Competitors** → enter the site name, URL, engine (`http` for a regular site,
+   `playwright` for a JavaScript site) → "Add".
+2. **Settings** → at the bottom there is an example selector configuration (`parser_config`) —
+   copy the block you need to match the site structure.
+3. Press **▶ Run** on the "Competitors" page.
 
-Ежедневный сбор выполняется автоматически в 21:00 МСК
-(время меняется на странице «Настройки»).
+The daily collection runs automatically at 21:00 MSK
+(the time can be changed on the "Settings" page).
 
-## Как пользоваться
+## How to use
 
-| Страница | Что даёт |
+| Page | What it gives |
 |---|---|
-| Главная | Показатели дня, ТОП-20 спроса и ТОП-20 закупки |
-| Товары | Поиск по артикулу/OEM/названию, фильтры, карточки с графиками истории |
-| Конкуренты | Добавление/отключение сайтов, ручной запуск, статусы |
-| Аналитика | Распределение рейтингов A/B/C/D/NEW, индекс спроса |
-| ТОП продаж | Ранжирование по предполагаемым продажам 7/14/30/90 дней |
-| Рекомендации к закупке | Позиции с высокой оборачиваемостью |
-| История цен | Мин/макс/средняя/медиана, цены каждого конкурента |
-| Отчёт | Ежедневный отчёт после парсинга |
-| Выгрузка Excel | 4 листа: текущие данные, история, рекомендации, цены |
+| Dashboard | Daily metrics, TOP-20 by demand and TOP-20 for purchasing |
+| Products | Search by SKU/OEM/name, filters, cards with history charts |
+| Competitors | Adding/disabling sites, manual runs, statuses |
+| Analytics | Rating distribution A/B/C/D/NEW, demand index |
+| Top sales | Ranking by estimated sales over 7/14/30/90 days |
+| Purchase recommendations | Items with high turnover |
+| Price history | Min/max/average/median, prices of each competitor |
+| Report | Daily report after parsing |
+| Excel export | 4 sheets: current data, history, recommendations, prices |
 
-## Важно о данных
+## Important note about the data
 
-Изменение остатка конкурента — это **предполагаемая продажа** на основании
-изменения публичного остатка, а не подтверждённая продажа. Решения о закупке
-целесообразно принимать по статистике минимум за несколько недель и по данным
-нескольких конкурентов.
+A change in a competitor's stock level is an **estimated sale** based on
+a change in the public stock level, not a confirmed sale. Purchasing decisions
+are best made using statistics over at least several weeks and data from
+several competitors.
 
-## Разработка
+## Development
 
 ```bash
 pip install -r requirements.txt
-# нужен запущенный PostgreSQL, строка подключения — в .env (см. .env.example)
+# a running PostgreSQL is required, the connection string is in .env (see .env.example)
 alembic upgrade head
-uvicorn app.main:app --reload          # интерфейс
-python -m worker.scheduler             # ежедневный запуск в 21:00 МСК
-python tests/e2e_test.py               # сквозные тесты (32 проверки)
+uvicorn app.main:app --reload          # web interface
+python -m worker.scheduler             # daily run at 21:00 MSK
+python tests/e2e_test.py               # end-to-end tests (32 checks)
 ```
 
-## Структура
+## Structure
 
-- `app/` — веб-интерфейс (FastAPI + Jinja2), модели, роутеры
-- `app/services/parser/` — движки парсинга (HTTP, Playwright), нормализация
-- `app/services/analytics/` — расчёт метрик спроса и индекса
-- `app/services/matching.py` — объединение товаров по OEM/артикулам
-- `worker/scheduler.py` — ежедневное расписание
-- `alembic/` — миграции схемы БД
-- `tests/` — сквозные тесты с локальным фикстурным сайтом
+- `app/` — web interface (FastAPI + Jinja2), models, routers
+- `app/services/parser/` — parsing engines (HTTP, Playwright), normalization
+- `app/services/analytics/` — demand metrics and index calculation
+- `app/services/matching.py` — merging products by OEM/SKU
+- `worker/scheduler.py` — daily schedule
+- `alembic/` — database schema migrations
+- `tests/` — end-to-end tests with a local fixture site
