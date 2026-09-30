@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Главная — Мониторинг запчастей{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-1">Сегодня обработано</h1>
+<p class="text-sm text-gray-500 mb-4">{{ today.strftime('%d.%m.%Y') }}</p>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-slate-800">{{ competitors_count }}</div>
+        <div class="text-sm text-gray-500">сайтов</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-slate-800">{{ products_total }}</div>
+        <div class="text-sm text-gray-500">товаров</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-emerald-600">{{ in_stock }}</div>
+        <div class="text-sm text-gray-500">товаров в наличии</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-orange-600">{{ stock_changes }}</div>
+        <div class="text-sm text-gray-500">изменений остатков</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-blue-600">{{ price_changes }}</div>
+        <div class="text-sm text-gray-500">изменений цен</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-violet-600">{{ new_products }}</div>
+        <div class="text-sm text-gray-500">новых товаров</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-red-500">{{ disappeared }}</div>
+        <div class="text-sm text-gray-500">исчезнувших товаров</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="text-3xl font-bold text-slate-800">{{ processed_today }}</div>
+        <div class="text-sm text-gray-500">проверено товаров (последний запуск)</div>
+    </div>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-lg font-semibold mb-3">ТОП-20 по динамике спроса</h2>
+        <table class="w-full text-sm">
+            <thead><tr class="text-left text-gray-500 border-b">
+                <th class="py-2">Товар</th><th>Спрос/день</th><th>Продажи 30д</th>
+            </tr></thead>
+            <tbody>
+            {% for product, m in top_demand %}
+            <tr class="border-b hover:bg-gray-50">
+                <td class="py-2"><a class="text-blue-600 hover:underline" href="/products/{{ product.id }}">{{ product.name }}</a>
+                    <span class="text-gray-400">{{ product.article or '' }}</span></td>
+                <td>{{ m.avg_daily_demand if m else 0 }}</td>
+                <td>{{ m.sales_30d if m else 0 }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="py-4 text-gray-400">Нет данных — запустите первый сбор</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-lg font-semibold mb-3">ТОП-20 для закупки</h2>
+        <table class="w-full text-sm">
+            <thead><tr class="text-left text-gray-500 border-b">
+                <th class="py-2">Товар</th><th>Индекс</th><th>Рейтинг</th><th>Конкурентов</th>
+            </tr></thead>
+            <tbody>
+            {% for product, m in top_purchase %}
+            <tr class="border-b hover:bg-gray-50">
+                <td class="py-2"><a class="text-blue-600 hover:underline" href="/products/{{ product.id }}">{{ product.name }}</a></td>
+                <td><span class="font-semibold">{{ m.demand_index if m else 0 }}</span>/100</td>
+                <td><span class="px-2 py-0.5 rounded text-white text-xs
+                    {% if m and m.rating == 'A' %}bg-emerald-600
+                    {% elif m and m.rating == 'B' %}bg-blue-500
+                    {% elif m and m.rating == 'C' %}bg-amber-500
+                    {% elif m and m.rating == 'D' %}bg-gray-400
+                    {% else %}bg-violet-500{% endif %}">{{ m.rating if m else 'NEW' }}</span></td>
+                <td>{{ m.competitors_count if m else 0 }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="py-4 text-gray-400">Нет данных</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

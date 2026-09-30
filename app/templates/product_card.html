@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — история{% endblock %}
+{% block content %}
+<div class="flex items-start justify-between mb-4">
+    <div>
+        <h1 class="text-2xl font-bold">{{ product.name }}</h1>
+        <p class="text-gray-500 text-sm mt-1">
+            Артикул: <span class="font-mono">{{ product.article or '—' }}</span>
+            {% if product.oem %} · OEM: <span class="font-mono">{{ product.oem }}</span>{% endif %}
+            {% if product.brand %} · {{ product.brand }}{% endif %}
+            {% if product.applicability %} · Применяемость: {{ product.applicability }}{% endif %}
+        </p>
+    </div>
+    {% if metrics %}
+    <div class="text-right">
+        <div class="text-3xl font-bold">{{ metrics.demand_index }}<span class="text-base text-gray-400">/100</span></div>
+        <span class="px-2 py-0.5 rounded text-white text-xs
+            {% if metrics.rating == 'A' %}bg-emerald-600{% elif metrics.rating == 'B' %}bg-blue-500
+            {% elif metrics.rating == 'C' %}bg-amber-500{% elif metrics.rating == 'D' %}bg-gray-400
+            {% else %}bg-violet-500{% endif %}">{{ metrics.rating }}</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if metrics %}
+<div class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+    <div class="bg-white rounded-lg shadow p-3">
+        <div class="text-xl font-bold">{{ metrics.sales_7d }}</div>
+        <div class="text-xs text-gray-500">Продажи 7 дней</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-3">
+        <div class="text-xl font-bold">{{ metrics.sales_30d }}</div>
+        <div class="text-xs text-gray-500">Продажи 30 дней</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-3">
+        <div class="text-xl font-bold">{{ metrics.avg_daily_demand }}</div>
+        <div class="text-xs text-gray-500">Среднедневной спрос</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-3">
+        <div class="text-xl font-bold">{{ metrics.sales_frequency_pct }}%</div>
+        <div class="text-xs text-gray-500">Частота продаж</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-3">
+        <div class="text-xl font-bold">{{ metrics.competitors_count }}</div>
+        <div class="text-xs text-gray-500">Конкурентов</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-3">
+        <div class="text-xl font-bold">
+            {% if metrics.price_min %}{{ '%.0f'|format(metrics.price_min) }}–{{ '%.0f'|format(metrics.price_max) }} ₽{% else %}—{% endif %}
+        </div>
+        <div class="text-xs text-gray-500">Диапазон цен</div>
+    </div>
+</div>
+{% endif %}
+
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-2">Дата → остаток</h2>
+        <canvas id="stockChart" height="180"></canvas>
+    </section>
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-2">Дата → цена</h2>
+        <canvas id="priceChart" height="180"></canvas>
+    </section>
+</div>
+
+<section class="bg-white rounded-lg shadow p-4 mb-6">
+    <h2 class="font-semibold mb-3">Предложения конкурентов</h2>
+    <table class="w-full text-sm">
+        <thead><tr class="text-left text-gray-500 border-b">
+            <th class="py-2">Конкурент</th><th>Цена</th><th>Старая</th><th>Остаток</th><th>Наличие</th><th>Ссылка</th>
+        </tr></thead>
+        <tbody>
+        {% for o in offers %}
+        <tr class="border-b">
+            <td class="py-2">{{ o.competitor.name }}</td>
+            <td>{% if o.price %}{{ '%.0f'|format(o.price) }} ₽{% else %}—{% endif %}</td>
+            <td>{% if o.old_price %}<s class="text-gray-400">{{ '%.0f'|format(o.old_price) }} ₽</s>{% else %}—{% endif %}</td>
+            <td>{{ o.stock_qty if o.stock_qty is not none else '—' }}</td>
+            <td>
+                {% if o.disappeared %}<span class="text-red-600">Товар исчез из каталога</span>
+                {% elif o.stock_status.value == 'in_stock' %}<span class="text-emerald-600">В наличии</span>
+                {% elif o.stock_status.value == 'out_of_stock' %}<span class="text-red-500">Нет в наличии</span>
+                {% elif o.stock_status.value == 'on_order' %}<span class="text-amber-600">Под заказ</span>
+                {% elif o.stock_status.value == 'many' %}<span class="text-blue-600">Много</span>
+                {% else %}—{% endif %}
+            </td>
+            <td><a href="{{ o.url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">открыть</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="py-3 text-gray-400">Нет предложений</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section class="bg-white rounded-lg shadow p-4">
+    <h2 class="font-semibold mb-3">История</h2>
+    <table class="w-full text-sm">
+        <thead><tr class="text-left text-gray-500 border-b">
+            <th class="py-2">Дата</th><th>Цена от</th><th>Цена до</th><th>Остаток (сумма)</th><th>Изменение</th>
+        </tr></thead>
+        <tbody>
+        {% for row in history|reverse %}
+        <tr class="border-b">
+            <td class="py-2">{{ row.day.strftime('%d.%m.%Y') }}</td>
+            <td>{% if row.price %}{{ '%.0f'|format(row.price) }} ₽{% else %}—{% endif %}</td>
+            <td>{% if row.price_max and row.price_max != row.price %}{{ '%.0f'|format(row.price_max) }} ₽{% else %}—{% endif %}</td>
+            <td>{{ row.total if row.total is not none else '—' }}</td>
+            <td>
+                {% if row.delta is not none %}
+                    {% if row.delta < 0 %}<span class="text-emerald-600 font-semibold">{{ row.delta }} (продажи {{ -row.delta }})</span>
+                    {% elif row.delta > 0 %}<span class="text-blue-600 font-semibold">+{{ row.delta }} (поступление)</span>
+                    {% else %}0{% endif %}
+                {% else %}—{% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="py-3 text-gray-400">История появится после нескольких запусков</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<script>
+const series = {{ series_json|safe }};
+function makeChart(canvasId, key, color) {
+    const labels = [...new Set(Object.values(series).flatMap(s => s[key].map(p => p.x)))].sort();
+    const datasets = Object.entries(series).map(([name, s]) => ({
+        label: name,
+        data: labels.map(l => {
+            const pt = s[key].find(p => p.x === l);
+            return pt ? pt.y : null;
+        }),
+        borderColor: color,
+        backgroundColor: color + '33',
+        spanGaps: true,
+        tension: 0.25,
+        pointRadius: 3,
+    }));
+    new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: false } },
+            interaction: { mode: 'index', intersect: false },
+        },
+    });
+}
+if (Object.keys(series).length) {
+    makeChart('stockChart', 'stock', '#059669');
+    makeChart('priceChart', 'price', '#2563eb');
+}
+</script>
+{% endblock %}

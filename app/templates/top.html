@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}ТОП продаж{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-1">ТОП продаж</h1>
+<p class="text-sm text-gray-500 mb-4">
+    Предполагаемые продажи на основании изменения публичного остатка (ТЗ п.29)
+</p>
+
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead><tr class="text-left text-gray-500 border-b">
+            <th class="p-3">#</th>
+            <th class="p-3">Артикул</th>
+            <th class="p-3">Наименование</th>
+            <th class="p-3">Продажи 7д</th>
+            <th class="p-3">Продажи 14д</th>
+            <th class="p-3">Продажи 30д</th>
+            <th class="p-3">Продажи 90д</th>
+            <th class="p-3">Спрос/день</th>
+            <th class="p-3">Частота</th>
+            <th class="p-3">Конкурентов</th>
+            <th class="p-3">Рейтинг</th>
+        </tr></thead>
+        <tbody>
+        {% for product, m in rows %}
+        <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 text-gray-400">{{ loop.index }}</td>
+            <td class="p-3 font-mono text-xs">{{ product.article or product.oem or '—' }}</td>
+            <td class="p-3"><a href="/products/{{ product.id }}" class="text-blue-600 hover:underline">{{ product.name }}</a></td>
+            <td class="p-3 font-semibold">{{ m.sales_7d }}</td>
+            <td class="p-3">{{ m.sales_14d }}</td>
+            <td class="p-3 font-semibold text-emerald-600">{{ m.sales_30d }}</td>
+            <td class="p-3">{{ m.sales_90d }}</td>
+            <td class="p-3">{{ m.avg_daily_demand }}</td>
+            <td class="p-3">{{ m.sales_frequency_pct }}%</td>
+            <td class="p-3">{{ m.competitors_count }}</td>
+            <td class="p-3">
+                <span class="px-2 py-0.5 rounded text-white text-xs
+                    {% if m.rating == 'A' %}bg-emerald-600{% elif m.rating == 'B' %}bg-blue-500
+                    {% elif m.rating == 'C' %}bg-amber-500{% elif m.rating == 'D' %}bg-gray-400
+                    {% else %}bg-violet-500{% endif %}">{{ m.rating }}</span>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="11" class="p-6 text-center text-gray-400">Нет данных — запустите сбор</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

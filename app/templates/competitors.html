@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Конкуренты{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">Конкуренты</h1>
+</div>
+
+<div class="bg-white rounded-lg shadow p-4 mb-6">
+    <h2 class="font-semibold mb-3">Добавить сайт</h2>
+    <form method="post" action="/competitors/add" class="grid md:grid-cols-4 gap-3">
+        <input name="name" required placeholder="Название компании"
+               class="border rounded px-3 py-2">
+        <input name="url" required placeholder="https://example.com"
+               class="border rounded px-3 py-2">
+        <select name="engine" class="border rounded px-3 py-2">
+            <option value="http">HTTP-парсинг</option>
+            <option value="playwright">Playwright (для JS-сайтов)</option>
+        </select>
+        <button class="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-500">Добавить</button>
+    </form>
+    <p class="text-xs text-gray-500 mt-2">
+        После добавления задайте селекторы парсинга в настройках сайта (JSON в parser_config).
+    </p>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead><tr class="text-left text-gray-500 border-b">
+            <th class="p-3">Название</th>
+            <th class="p-3">Сайт</th>
+            <th class="p-3">Статус</th>
+            <th class="p-3">Последний запуск</th>
+            <th class="p-3">Товаров</th>
+            <th class="p-3">Ошибок</th>
+            <th class="p-3">Вкл</th>
+            <th class="p-3">Действия</th>
+        </tr></thead>
+        <tbody>
+        {% for c in competitors %}
+        <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 font-medium">{{ c.name }}</td>
+            <td class="p-3"><a href="{{ c.url }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">{{ c.url|truncate(40) }}</a></td>
+            <td class="p-3">
+                {% set status = c.status_label %}
+                <span class="px-2 py-0.5 rounded text-xs text-white
+                    {% if status == 'Работает' %}bg-emerald-600
+                    {% elif status == 'Ошибка' %}bg-red-600
+                    {% else %}bg-gray-400{% endif %}">{{ status }}</span>
+            </td>
+            <td class="p-3">
+                {% if c.last_run %}
+                    {{ c.last_run.started_at.strftime('%d.%m %H:%M') }}
+                    {% if c.last_run.error_message %}
+                    <div class="text-xs text-red-600 max-w-xs truncate" title="{{ c.last_run.error_message }}">{{ c.last_run.error_message }}</div>
+                    {% endif %}
+                {% else %}—{% endif %}
+            </td>
+            <td class="p-3">{{ c.last_run.products_found if c.last_run else '—' }}</td>
+            <td class="p-3">{{ c.last_run.errors_count if c.last_run else '—' }}</td>
+            <td class="p-3">{{ '✓' if c.enabled else '✗' }}</td>
+            <td class="p-3">
+                <div class="flex gap-2">
+                    <form method="post" action="/competitors/{{ c.id }}/run">
+                        <button class="px-2 py-1 bg-emerald-600 text-white rounded text-xs hover:bg-emerald-500"
+                                title="Запустить сбор данных">▶ Запустить</button>
+                    </form>
+                    <form method="post" action="/competitors/{{ c.id }}/toggle">
+                        <button class="px-2 py-1 bg-slate-500 text-white rounded text-xs hover:bg-slate-400">
+                            {{ 'Выкл' if c.enabled else 'Вкл' }}</button>
+                    </form>
+                    <form method="post" action="/competitors/{{ c.id }}/delete"
+                          onsubmit="return confirm('Удалить конкурента и его данные?')">
+                        <button class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-500">Удалить</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="p-6 text-center text-gray-400">Пока нет конкурентов — добавьте первый сайт выше</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

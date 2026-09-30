@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Мониторинг запчастей{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<nav class="bg-slate-800 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center space-x-1 h-12 overflow-x-auto">
+            <a href="/" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap font-semibold">Главная</a>
+            <a href="/products" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Товары</a>
+            <a href="/competitors" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Конкуренты</a>
+            <a href="/analytics" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Аналитика</a>
+            <a href="/analytics/top" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">ТОП продаж</a>
+            <a href="/analytics/purchase" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Рекомендации к закупке</a>
+            <a href="/analytics/prices" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">История цен</a>
+            <a href="/report" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Отчёт</a>
+            <a href="/runs" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Запуски</a>
+            <a href="/settings" class="px-3 py-2 rounded hover:bg-slate-700 whitespace-nowrap">Настройки</a>
+            <a href="/export/excel" class="ml-auto px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-500 whitespace-nowrap">Выгрузка Excel</a>
+        </div>
+    </div>
+</nav>
+<main class="max-w-7xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

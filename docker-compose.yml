@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: monitor
+      POSTGRES_PASSWORD: ${PM_DB_PASSWORD:-monitor}
+      POSTGRES_DB: parts_monitor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monitor -d parts_monitor"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build: .
+    environment:
+      PM_DATABASE_URL: postgresql+psycopg://monitor:${PM_DB_PASSWORD:-monitor}@db:5432/parts_monitor
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  scheduler:
+    build: .
+    environment:
+      PM_DATABASE_URL: postgresql+psycopg://monitor:${PM_DB_PASSWORD:-monitor}@db:5432/parts_monitor
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_started
+    command: python -m worker.scheduler
+    restart: unless-stopped
+
+volumes:
+  pgdata:

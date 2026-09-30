@@ -1,0 +1,74 @@
+﻿"""РќР°СЃС‚СЂРѕР№РєРё: СЂР°СЃРїРёСЃР°РЅРёРµ, РІРµСЃР° РёРЅРґРµРєСЃР° СЃРїСЂРѕСЃР° (РўР— Рї.3, 12)."""
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.templating import templates
+from app.models import AppSetting
+
+router = APIRouter()
+
+# Р—РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ РЅР°СЃС‚СЂР°РёРІР°РµРјРѕРіРѕ РёРЅРґРµРєСЃР° (РўР— Рї.12)
+DEFAULT_WEIGHTS = {
+    "w_sales_volume": 30,     # РѕР±СЉРµРј РїСЂРµРґРїРѕР»Р°РіР°РµРјС‹С… РїСЂРѕРґР°Р¶
+    "w_frequency": 20,        # С‡Р°СЃС‚РѕС‚Р° РїСЂРѕРґР°Р¶
+    "w_competitors": 20,      # РєРѕР»РёС‡РµСЃС‚РІРѕ РєРѕРЅРєСѓСЂРµРЅС‚РѕРІ
+    "w_stock_dynamics": 15,   # РґРёРЅР°РјРёРєР° РѕСЃС‚Р°С‚РєРѕРІ
+    "w_price_change": 10,     # РёР·РјРµРЅРµРЅРёРµ С†РµРЅС‹
+    "w_days_observed": 5,     # РєРѕР»РёС‡РµСЃС‚РІРѕ РґРЅРµР№ РЅР°Р±Р»СЋРґРµРЅРёСЏ
+}
+
+
+def get_weights(db: Session) -> dict:
+    row = db.get(AppSetting, "demand_index_weights")
+    return row.value if row else DEFAULT_WEIGHTS
+
+
+@router.get("", response_class=HTMLResponse)
+def settings_page(request: Request, db: Session = Depends(get_db)):
+    weights = get_weights(db)
+    saved = db.get(AppSetting, "parse_schedule")
+    schedule = saved.value if saved else {"hour": 21, "minute": 0}
+    return templates.TemplateResponse(
+        request,
+        "settings.html",
+        {"weights": weights, "schedule": schedule},
+    )
+
+
+@router.post("/weights")
+def save_weights(
+    hour: int = Form(...),
+    minute: int = Form(...),
+    w_sales_volume: int = Form(...),
+    w_frequency: int = Form(...),
+    w_competitors: int = Form(...),
+    w_stock_dynamics: int = Form(...),
+    w_price_change: int = Form(...),
+    w_days_observed: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    """РЎРѕС…СЂР°РЅРµРЅРёРµ РІРµСЃРѕРІ РёРЅРґРµРєСЃР°: В«Р¤РѕСЂРјСѓР»Р° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ РЅР°СЃС‚СЂР°РёРІР°РµРјРѕР№В» (РўР— Рї.12)."""
+    weights = {
+        "w_sales_volume": w_sales_volume,
+        "w_frequency": w_frequency,
+        "w_competitors": w_competitors,
+        "w_stock_dynamics": w_stock_dynamics,
+        "w_price_change": w_price_change,
+        "w_days_observed": w_days_observed,
+    }
+    w_row = db.get(AppSetting, "demand_index_weights")
+    if w_row is None:
+        w_row = AppSetting(key="demand_index_weights")
+        db.add(w_row)
+    w_row.value = weights
+
+    s_row = db.get(AppSetting, "parse_schedule")
+    if s_row is None:
+        s_row = AppSetting(key="parse_schedule")
+        db.add(s_row)
+    s_row.value = {"hour": hour, "minute": minute}
+    db.commit()
+    return RedirectResponse("/settings", status_code=303)

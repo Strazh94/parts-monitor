@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Аналитика{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Аналитика</h1>
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    {% for code, label, color in [
+        ('A', 'Высокий спрос', 'bg-emerald-600'),
+        ('B', 'Средний спрос', 'bg-blue-500'),
+        ('C', 'Низкий спрос', 'bg-amber-500'),
+        ('D', 'Нет движения', 'bg-gray-400'),
+        ('NEW', 'Новые', 'bg-violet-500')] %}
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+        <div class="text-3xl font-bold">{{ rating_dist.get(code, 0) }}</div>
+        <div class="text-sm text-gray-500">{{ label }}</div>
+        <div class="mt-2 inline-block px-3 py-1 rounded text-white text-xs {{ color }}">{{ code }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-3">Товары с ростом спроса</h2>
+        <table class="w-full text-sm">
+            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Товар</th><th>Спрос/день</th><th>Индекс</th></tr></thead>
+            <tbody>
+            {% for p, m in top_index[:10] %}
+            <tr class="border-b">
+                <td class="py-2"><a href="/products/{{ p.id }}" class="text-blue-600 hover:underline">{{ p.name }}</a></td>
+                <td>{{ m.avg_daily_demand }}</td>
+                <td class="font-semibold">{{ m.demand_index }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="py-3 text-gray-400">Нет данных</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-semibold mb-3">ТОП по индексу спроса</h2>
+        <table class="w-full text-sm">
+            <thead><tr class="text-left text-gray-500 border-b"><th class="py-2">Товар</th><th>Индекс</th><th>Конкурентов</th></tr></thead>
+            <tbody>
+            {% for p, m in top_index[:10] %}
+            <tr class="border-b">
+                <td class="py-2"><a href="/products/{{ p.id }}" class="text-blue-600 hover:underline">{{ p.name }}</a></td>
+                <td class="font-semibold">{{ m.demand_index }}/100</td>
+                <td>{{ m.competitors_count }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="py-3 text-gray-400">Нет данных</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Товары{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Товары</h1>
+
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-4 grid md:grid-cols-6 gap-3 items-end">
+    <div class="md:col-span-2">
+        <label class="text-xs text-gray-500">Поиск (артикул, OEM, название, бренд)</label>
+        <input name="q" value="{{ q }}" placeholder="DZ911234, WG9725, фильтр..."
+               class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+        <label class="text-xs text-gray-500">Рейтинг</label>
+        <select name="rating" class="w-full border rounded px-3 py-2">
+            <option value="">Любой</option>
+            {% for r in ratings %}
+            <option value="{{ r }}" {% if rating == r %}selected{% endif %}>{{ r }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="text-xs text-gray-500">Мин. конкурентов</label>
+        <input type="number" name="min_competitors" value="{{ min_competitors or '' }}" min="0"
+               class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+        <label class="text-xs text-gray-500">Сортировка</label>
+        <select name="sort" class="w-full border rounded px-3 py-2">
+            <option value="index" {% if sort == 'index' %}selected{% endif %}>По индексу спроса</option>
+            <option value="sales30" {% if sort == 'sales30' %}selected{% endif %}>Продажи 30 дней</option>
+            <option value="sales7" {% if sort == 'sales7' %}selected{% endif %}>Продажи 7 дней</option>
+            <option value="demand" {% if sort == 'demand' %}selected{% endif %}>Среднедневной спрос</option>
+            <option value="competitors" {% if sort == 'competitors' %}selected{% endif %}>Конкурентов</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена по возрастанию</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Название</option>
+        </select>
+    </div>
+    <div class="flex items-center gap-3">
+        <label class="flex items-center gap-1 text-sm">
+            <input type="checkbox" name="in_stock_only" {% if in_stock_only %}checked{% endif %}> в наличии
+        </label>
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Найти</button>
+    </div>
+</form>
+
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead><tr class="text-left text-gray-500 border-b">
+            <th class="p-3">Артикул</th>
+            <th class="p-3">Наименование</th>
+            <th class="p-3">Бренд</th>
+            <th class="p-3">Конкурентов</th>
+            <th class="p-3">Цена от</th>
+            <th class="p-3">Продажи 7д</th>
+            <th class="p-3">Продажи 30д</th>
+            <th class="p-3">Спрос/день</th>
+            <th class="p-3">Частота</th>
+            <th class="p-3">Рейтинг</th>
+            <th class="p-3">Индекс</th>
+        </tr></thead>
+        <tbody>
+        {% for product, m in rows %}
+        <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 font-mono text-xs">{{ product.article or product.oem or '—' }}</td>
+            <td class="p-3">
+                <a href="/products/{{ product.id }}" class="text-blue-600 hover:underline">{{ product.name }}</a>
+                {% if product.applicability %}<div class="text-xs text-gray-400">{{ product.applicability }}</div>{% endif %}
+            </td>
+            <td class="p-3">{{ product.brand or '—' }}</td>
+            <td class="p-3">{{ m.competitors_count if m else 0 }}</td>
+            <td class="p-3">{{ '%.0f'|format(m.price_min) ~ ' ₽' if m and m.price_min else '—' }}</td>
+            <td class="p-3">{{ m.sales_7d if m else 0 }}</td>
+            <td class="p-3">{{ m.sales_30d if m else 0 }}</td>
+            <td class="p-3">{{ m.avg_daily_demand if m else 0 }}</td>
+            <td class="p-3">{{ m.sales_frequency_pct if m else 0 }}%</td>
+            <td class="p-3">
+                {% set r = m.rating if m else 'NEW' %}
+                <span class="px-2 py-0.5 rounded text-white text-xs
+                    {% if r == 'A' %}bg-emerald-600{% elif r == 'B' %}bg-blue-500
+                    {% elif r == 'C' %}bg-amber-500{% elif r == 'D' %}bg-gray-400
+                    {% else %}bg-violet-500{% endif %}">{{ r }}</span>
+            </td>
+            <td class="p-3 font-semibold">{{ m.demand_index if m else 0 }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="11" class="p-6 text-center text-gray-400">
+            {% if q or rating or min_competitors %}Ничего не найдено{% else %}Нет данных — запустите сбор{% endif %}
+        </td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if rows|length == 200 %}
+<p class="text-xs text-gray-500 mt-2">Показаны первые 200 из найденных — уточните поиск или фильтры.</p>
+{% endif %}
+{% endblock %}

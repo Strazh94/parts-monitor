@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Настройки{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Настройки парсинга</h1>
+
+<form method="post" action="/settings/weights" class="bg-white rounded-lg shadow p-5 mb-6 max-w-3xl">
+    <h2 class="font-semibold mb-1">Расписание автоматического запуска (ТЗ п.3)</h2>
+    <p class="text-xs text-gray-500 mb-3">Рекомендуемое окно: 20:00–23:00 по Москве</p>
+    <div class="flex gap-4 items-center mb-6">
+        <label class="text-sm">Время (МСК):
+            <input type="number" name="hour" min="0" max="23" value="{{ schedule.hour }}"
+                   class="w-20 border rounded px-2 py-1 ml-2"> :
+            <input type="number" name="minute" min="0" max="59" value="{{ schedule.minute }}"
+                   class="w-20 border rounded px-2 py-1 ml-1">
+        </label>
+    </div>
+
+    <h2 class="font-semibold mb-1">Веса индекса спроса (ТЗ п.12)</h2>
+    <p class="text-xs text-gray-500 mb-3">Формула индекса 0–100 настраивается: измените веса и сохраните</p>
+    <div class="grid md:grid-cols-3 gap-4 mb-4">
+        <label class="text-sm">Объем продаж (30 дн)
+            <input type="number" name="w_sales_volume" value="{{ weights.w_sales_volume }}"
+                   class="w-full border rounded px-3 py-2 mt-1"></label>
+        <label class="text-sm">Частота продаж
+            <input type="number" name="w_frequency" value="{{ weights.w_frequency }}"
+                   class="w-full border rounded px-3 py-2 mt-1"></label>
+        <label class="text-sm">Количество конкурентов
+            <input type="number" name="w_competitors" value="{{ weights.w_competitors }}"
+                   class="w-full border rounded px-3 py-2 mt-1"></label>
+        <label class="text-sm">Динамика остатков
+            <input type="number" name="w_stock_dynamics" value="{{ weights.w_stock_dynamics }}"
+                   class="w-full border rounded px-3 py-2 mt-1"></label>
+        <label class="text-sm">Изменение цены
+            <input type="number" name="w_price_change" value="{{ weights.w_price_change }}"
+                   class="w-full border rounded px-3 py-2 mt-1"></label>
+        <label class="text-sm">Дни наблюдения
+            <input type="number" name="w_days_observed" value="{{ weights.w_days_observed }}"
+                   class="w-full border rounded px-3 py-2 mt-1"></label>
+    </div>
+    <button class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">Сохранить</button>
+</form>
+
+<div class="bg-white rounded-lg shadow p-5 max-w-3xl">
+    <h2 class="font-semibold mb-2">Селекторы парсинга сайта</h2>
+    <p class="text-sm text-gray-600 mb-2">
+        Конфиг каждого конкурента хранится в поле <code class="bg-gray-100 px-1">parser_config</code>.
+        Пример структуры:
+    </p>
+    <pre class="bg-slate-800 text-slate-100 text-xs rounded p-4 overflow-x-auto">{
+  "start_urls": ["https://site.ru/catalog/page-{page}"],
+  "max_pages": 30,
+  "pagination": "page",
+  "item_selector": ".product-card",
+  "delay_seconds": 1.5,
+  "fields": {
+    "name":       {"selector": ".title"},
+    "article":    {"selector": ".sku"},
+    "oem":        {"selector": ".oem"},
+    "price":      {"selector": ".price"},
+    "old_price":  {"selector": ".old-price"},
+    "stock":      {"selector": ".availability"},
+    "brand":      {"selector": ".brand"},
+    "url":        {"selector": "a", "attr": "href"}
+  }
+}</pre>
+    <p class="text-xs text-gray-500 mt-2">
+        Типы движка: <b>http</b> — обычные сайты; <b>playwright</b> — сайты на JavaScript.
+        Тип меняется при добавлении конкурента.
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Окружение
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Логи и редакторы
+*.log
+.DS_Store
+Thumbs.db
+
+# Тестовые артефакты
+.pytest_cache/
+htmlcov/
+.coverage
