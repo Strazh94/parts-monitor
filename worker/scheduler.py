@@ -55,7 +55,7 @@ async def daily_parse_job() -> None:
         count = recalculate_all(db)
         logger.info("Метрики пересчитаны для %d товаров", count)
 
-    report = build_daily_report(db)
+        report = build_daily_report(db)
     logger.info(
         "Отчёт за %s: сайтов=%d, товаров=%d, новых=%d, изменений цен=%d, снижений остатка=%d",
         report["day"],
@@ -70,7 +70,8 @@ async def daily_parse_job() -> None:
     logger.info("Ежедневный сбор данных завершён")
 
 
-def main() -> None:
+async def amain() -> None:
+    """Запуск планировщика внутри event loop (AsyncIOScheduler требует running loop)."""
     hour, minute = _schedule_hour()
     scheduler = AsyncIOScheduler(timezone=MSK)
     scheduler.add_job(
@@ -79,12 +80,20 @@ def main() -> None:
         id="daily_parse",
         misfire_grace_time=3600,
     )
-    logger.info("Планировщик запущен: ежедневный сбор в %02d:%02d МСК", hour, minute)
     scheduler.start()
+    logger.info("Планировщик запущен: ежедневный сбор в %02d:%02d МСК", hour, minute)
     try:
-        asyncio.get_event_loop().run_forever()
+        # Держим процесс живым до Ctrl+C / остановки контейнера
+        await asyncio.Event().wait()
+    finally:
+        scheduler.shutdown(wait=False)
+
+
+def main() -> None:
+    try:
+        asyncio.run(amain())
     except (KeyboardInterrupt, SystemExit):
-        scheduler.shutdown()
+        pass
 
 
 if __name__ == "__main__":
